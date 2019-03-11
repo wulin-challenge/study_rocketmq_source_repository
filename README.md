@@ -28,3 +28,18 @@
 <hr/>
 重点推荐
 <a href="https://blog.csdn.net/prestigeding/column/info/20603">[推荐]详细讲解rocketmq技术实现的系统文章</a>
+
+# rocketmq使用推荐文章:
+文章不成系列,仅供参考
+<br/><a href="https://www.oschina.net/news/91655/apache-rocketmq-4-2-0-released">Apache RocketMQ 4.2.0 发布，阿里开源的消息中间件 - 开源中国社区</a>
+<br/><a href="https://blog.csdn.net/zknxx/article/details/52987216">解决RocketMQ报No route info of this topic：异常 - CSDN博客</a>
+<br/><a href="https://blog.csdn.net/meilong_whpu/article/details/72152668">在Eclipse中启动RocketMQ的方法 - CSDN博客</a>
+<br/><a href="https://www.jianshu.com/p/824066d70da8">RocketMQ 实战之快速入门 - 简书</a>
+<br/><a href="https://blog.csdn.net/zengxiaosen/article/details/78896820">rocketmq异步复制or同步双写 - CSDN博客</a>
+<br/><a href="https://blog.csdn.net/yangjiachang1203/article/category/6341544">rocketMq(入门)onlyyjco的专栏 - CSDN博客</a>
+<br/><a href="https://www.jianshu.com/p/eec1104dcd4f">RocketMQ 基本使用 - 简书</a>
+<br/><a href="https://blog.csdn.net/chenaima1314/article/details/79202315">RocketMQ中文文档（译） - CSDN博客</a>
+<br/><a href="https://my.oschina.net/buru1kan/blog/1806173">Apache RocketMQ 4.2.0 安装及API调用教程 - 吾同树 - 开源中国</a>
+<br/><a href="https://www.cnblogs.com/zyguo/p/4962425.html">2 rocketmq mqadmin 的用法详解 - 鳄鱼爸爸 - 博客园</a>
+<br/><a href="https://blog.csdn.net/weixin_41098980/article/details/79886312">RocketMQ消费能力慢的优化方案 - CSDN博客</a>
+<br/><a href="https://blog.csdn.net/akfly/article/details/53411808">rocketmq学习笔记 二 官方实例<消费者操作> - CSDN博客</a>
