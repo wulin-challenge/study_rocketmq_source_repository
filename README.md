@@ -1,0 +1,2 @@
+# study_rocketmq_source_repository
+该版本是rocketmq的4.0版本,该仓库主要是个人学习rocketmq的源码使用
