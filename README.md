@@ -11,3 +11,7 @@
 # rocketmq的额外扩展
 <a href="https://github.com/wulin-challenge/rocketmq-externals">rocketmq的扩展</a>
 包括 rocketm-console,rocketmq-spring,rocketmq-redis等等
+
+# rockemq集成spring
+<a href="https://github.com/wulin-challenge/rocketmq-spring">rocketmq集成spring</a>
+带有源码解析
