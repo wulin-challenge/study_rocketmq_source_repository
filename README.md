@@ -8,3 +8,5 @@
 <a href="https://pan.baidu.com/s/1XaoZ1YnugFi96I6ybLMUJQ">参考书籍</a>
 提取码: 1t4u
 
+# rocketmq的额外扩展,包括 rocketm-console,rocketmq-spring,rocketmq-redis等等
+<a href="https://github.com/wulin-challenge/rocketmq-externals">rocketmq的扩展</a>
