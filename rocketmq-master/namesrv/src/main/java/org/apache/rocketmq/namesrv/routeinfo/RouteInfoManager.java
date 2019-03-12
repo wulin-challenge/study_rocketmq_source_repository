@@ -446,7 +446,7 @@ public class RouteInfoManager {
     /**
      * 获取主题路由数据
      * <p> 从路由 表 topicQueueTable 、 brokerAddrTable 、filterServerTable 中分
-     * 别填充 TopicRouteData 中的 List<Queu 巳Data＞、 List<BrokerData＞和filterServer 地址表 。
+     * 别填充 TopicRouteData 中的 List<QueueData>、 List<BrokerData>和filterServer 地址表 。
      * @param topic 主题
      * @return
      */

@@ -132,6 +132,10 @@ public class Message implements Serializable {
         return this.properties.get(name);
     }
 
+    /**
+     * 得到消息主题
+     * @return
+     */
     public String getTopic() {
         return topic;
     }

@@ -76,6 +76,8 @@ public class Validators {
 
     /**
      * Validate message
+     * 
+     * 验证消息的 topic(主题),body(消息体)是否合法
      */
     public static void checkMessage(Message msg, DefaultMQProducer defaultMQProducer)
         throws MQClientException {
@@ -102,6 +104,8 @@ public class Validators {
 
     /**
      * Validate topic
+     * 
+     * 校验主题是否合法
      */
     public static void checkTopic(String topic) throws MQClientException {
         if (UtilAll.isBlank(topic)) {

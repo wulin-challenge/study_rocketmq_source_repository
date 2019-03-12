@@ -1,5 +1,6 @@
 package org.apache.rocketmq.example.simple.wulin;
 
+import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
@@ -7,6 +8,14 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
 public class SyncProducer {
+	
+	/**
+	 * class: DefaultMQProducerImpl
+	 * code: TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+	 * line: 479
+	 * @param args
+	 * @throws Exception
+	 */
     public static void main(String[] args) throws Exception {
         //Instantiate with a producer group name.
         DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name_producer");
@@ -19,7 +28,7 @@ public class SyncProducer {
         for (int i = 0; i < 5; i++) {
             //Create a message instance, specifying topic, tag and message body.
         	Thread.sleep(1000);
-            Message msg = new Message("TopicTest",
+            Message msg = new Message("TopicTest2",
             		"TagA",
             		("Hello RocketMQ!哈哈!! "+i).getBytes(RemotingHelper.DEFAULT_CHARSET));
             

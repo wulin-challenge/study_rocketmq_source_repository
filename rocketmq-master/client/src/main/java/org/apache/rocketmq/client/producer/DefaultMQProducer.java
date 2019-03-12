@@ -106,7 +106,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Timeout for sending messages.
      * 
-     * <p> 发送消息超时。
+     * <p> 发送消息超时。默认超时时间3s
      */
     private int sendMsgTimeout = 3000;
 
@@ -874,6 +874,10 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         this.createTopicKey = createTopicKey;
     }
 
+    /**
+     * 得到发送消息的超时时间
+     * @return
+     */
     public int getSendMsgTimeout() {
         return sendMsgTimeout;
     }
