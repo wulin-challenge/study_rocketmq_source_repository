@@ -18,15 +18,35 @@
 package org.apache.rocketmq.client.latency;
 
 /**
- * 延迟容错
+ * 延迟容错/潜在故障容错
  * @param <T>
  */
 public interface LatencyFaultTolerance<T> {
+	
+	/**
+	 * 更新失败条目 。
+	 * @param name - broker名称
+	 * @param currentLatency - 消息发送故障延迟时间 。
+	 * @param notAvailableDuration - 不可用持续时长， 在这个时间内， 该Broker 将被规避 。
+	 */
     void updateFaultItem(final T name, final long currentLatency, final long notAvailableDuration);
 
+    /**
+     * broker是否可用
+     * @param name - 一般指broker的名称
+     * @return 返回broker是否可用
+     */
     boolean isAvailable(final T name);
 
+    /**
+     * 移除 故障的broker 条目，意味着该 Broker 重新参与路由计算 。
+     * @param name - 一般指broker的名称
+     */
     void remove(final T name);
 
+    /**
+     * 尝试从规避的 Broker 中选择一个可用的 Broker ，如果没有找到，将返回 null 。
+     * @return
+     */
     T pickOneAtLeast();
 }

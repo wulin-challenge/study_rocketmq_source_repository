@@ -105,6 +105,8 @@ public class MQClientInstance {
     
     /**
      * Broker名字 和 Broker地址相关 Map
+     * 
+     * <p> 注意:brokerAddrTable的值被updateTopicRouteInfoFromNameServer函数更新
      */
     private final ConcurrentMap<String/* Broker Name */, HashMap<Long/* brokerId */, String/* address */>> brokerAddrTable =
         new ConcurrentHashMap<String, HashMap<Long, String>>();
@@ -1096,6 +1098,11 @@ public class MQClientInstance {
         return null;
     }
 
+    /**
+     * 通过broker的名称查找broker地址
+     * @param brokerName
+     * @return
+     */
     public String findBrokerAddressInPublish(final String brokerName) {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {

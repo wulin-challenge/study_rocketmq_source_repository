@@ -411,6 +411,11 @@ public class MessageDecoder {
         return map;
     }
 
+    /**
+     * 编码单条消息
+     * @param message 单条消息
+     * @return 返回单条消息编码后的字节
+     */
     public static byte[] encodeMessage(Message message) {
         //only need flag, body, properties
         byte[] body = message.getBody();
@@ -482,11 +487,17 @@ public class MessageDecoder {
         return message;
     }
 
+    /**
+     * 编码批量消息
+     * @param messages - 要编码的批量消息
+     * @return
+     */
     public static byte[] encodeMessages(List<Message> messages) {
         //TO DO refactor, accumulate in one buffer, avoid copies
         List<byte[]> encodedMessages = new ArrayList<byte[]>(messages.size());
         int allSize = 0;
         for (Message message : messages) {
+        	// 编码单条消息
             byte[] tmp = encodeMessage(message);
             encodedMessages.add(tmp);
             allSize += tmp.length;

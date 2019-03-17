@@ -701,7 +701,13 @@ public class BrokerController {
         }
     }
 
+    /**
+     * 则向所有的namesrv注册变化后的主题配置信息
+     * @param checkOrderConfig 是否为顺序消息
+     * @param oneway 是否是单向请求
+     */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway) {
+    	// 构建 [主题配置序列化包装类]
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
 
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())

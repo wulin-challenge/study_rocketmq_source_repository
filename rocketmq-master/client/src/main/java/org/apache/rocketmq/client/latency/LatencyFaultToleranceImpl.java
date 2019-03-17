@@ -96,9 +96,25 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
             '}';
     }
 
+    /**
+     * 失败条目 （ 规避规则 条 目） 。
+     *
+     */
     class FaultItem implements Comparable<FaultItem> {
+    	
+    	/**
+    	 * 条目唯一键，这里为 brokerName 。
+    	 */
         private final String name;
+        
+        /**
+         * 本次消息发送故障延迟时间 。
+         */
         private volatile long currentLatency;
+        
+        /**
+         * 故障规避开始时间 。
+         */
         private volatile long startTimestamp;
 
         public FaultItem(final String name) {

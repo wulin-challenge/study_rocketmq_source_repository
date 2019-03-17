@@ -63,33 +63,64 @@ import static org.apache.rocketmq.store.config.BrokerRole.SLAVE;
 public class DefaultMessageStore implements MessageStore {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    /**
+     * 消息存储配置属性 。
+     */
     private final MessageStoreConfig messageStoreConfig;
+    
+    /**
+     * CommitLog 文件的存储实现类 。
+     */
     // CommitLog
     private final CommitLog commitLog;
 
     /**
-     * 消费队列列表
+     * 消费队列列表,按消息主题分组 。
      */
     private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
 
+    /**
+     * 消息队列文件 ConsumeQueue刷盘线程。
+     */
     private final FlushConsumeQueueService flushConsumeQueueService;
 
+    /**
+     * 清除 CommitLog 文件服务 。
+     */
     private final CleanCommitLogService cleanCommitLogService;
 
+    /**
+     * 清除 ConsumeQueue 文件服务 。
+     */
     private final CleanConsumeQueueService cleanConsumeQueueService;
 
+    /**
+     * 索引文件实现类 。
+     */
     private final IndexService indexService;
 
+    /**
+     * MappedFile 分配服务 。
+     */
     private final AllocateMappedFileService allocateMappedFileService;
 
+    /**
+     * commitLog 消息分发，根据 CommitLog文件构建 ConsumeQueue 、 IndexFile 文件 。
+     */
     private final ReputMessageService reputMessageService;
 
+    /**
+     * 存储 HA 机制 。
+     */
     private final HAService haService;
 
     private final ScheduleMessageService scheduleMessageService;
 
     private final StoreStatsService storeStatsService;
 
+    /**
+     * 消息堆内存缓存 。
+     */
     private final TransientStorePool transientStorePool;
 
     private final RunningFlags runningFlags = new RunningFlags();
@@ -98,15 +129,29 @@ public class DefaultMessageStore implements MessageStore {
     private final ScheduledExecutorService scheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreScheduledThread"));
     private final BrokerStatsManager brokerStatsManager;
+    
+    /**
+     * 消息拉取长轮询模式消息达到监听器 。
+     */
     private final MessageArrivingListener messageArrivingListener;
+    
+    /**
+     * Broker 配置属性 。
+     */
     private final BrokerConfig brokerConfig;
 
     private volatile boolean shutdown = true;
 
+    /**
+     * 文件刷盘检测点 。
+     */
     private StoreCheckpoint storeCheckpoint;
 
     private AtomicLong printTimes = new AtomicLong(0);
 
+    /**
+     * CommitLog 文件转发请求 。
+     */
     private final LinkedList<CommitLogDispatcher> dispatcherList;
 
     private RandomAccessFile lockFile;
@@ -1559,6 +1604,10 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    /**
+     * 清除 CommitLog 文件服务 。
+     *
+     */
     class CleanCommitLogService {
 
         private final static int MAX_MANUAL_DELETE_FILE_TIMES = 20;
@@ -1717,6 +1766,10 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    /**
+     * 清除 ConsumeQueue 文件服务 。
+     *
+     */
     class CleanConsumeQueueService {
         private long lastPhysicalMinOffset = 0;
 
@@ -1762,7 +1815,6 @@ public class DefaultMessageStore implements MessageStore {
     /**
      * 将写到 ConsumeQueue中的数据刷新到磁盘,即 flush ConsumeQueue(消费队列) 线程服务。
      * 
-     * @author wulin
      */
     class FlushConsumeQueueService extends ServiceThread {
         private static final int RETRY_TIMES_OVER = 3;
@@ -1853,7 +1905,6 @@ public class DefaultMessageStore implements MessageStore {
      * <p> =============================================================
      * <p> 关键函数: DefaultMessageStore.this.doDispatch(dispatchRequest);
      * <p> Reput : 翻译为 : 重放 /重新放置/转存
-     * @author wulin
      *
      */
     class ReputMessageService extends ServiceThread {

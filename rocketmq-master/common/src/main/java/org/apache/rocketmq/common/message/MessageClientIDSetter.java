@@ -99,6 +99,10 @@ public class MessageClientIDSetter {
         return result;
     }
 
+    /**
+     * 得到唯一Id
+     * @return
+     */
     public static String createUniqID() {
         StringBuilder sb = new StringBuilder(LEN * 2);
         sb.append(FIX_STRING);

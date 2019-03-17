@@ -40,11 +40,19 @@ import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 主题配置管理类
+ * <p> broker在启动时就会初始化默认需要的主题
+ *
+ */
 public class TopicConfigManager extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
     private transient final Lock lockTopicConfigTable = new ReentrantLock();
 
+    /**
+     * 管理所有主题的主题配置列表
+     */
     private final ConcurrentMap<String, TopicConfig> topicConfigTable =
         new ConcurrentHashMap<String, TopicConfig>(1024);
     private final DataVersion dataVersion = new DataVersion();
@@ -54,6 +62,10 @@ public class TopicConfigManager extends ConfigManager {
     public TopicConfigManager() {
     }
 
+    /**
+     * broker在启动时就会初始化默认需要的主题
+     * @param brokerController - broker控制器
+     */
     public TopicConfigManager(BrokerController brokerController) {
         this.brokerController = brokerController;
         {
@@ -66,6 +78,9 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
+        	/**
+        	 * 判断 autoCreateTopicEnable的值,若autoCreateTopicEnable=true,则初始化创建主题并设置主题的创建权限perm=7
+        	 */
             // MixAll.DEFAULT_TOPIC
             if (this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
                 String topic = MixAll.DEFAULT_TOPIC;
@@ -142,6 +157,17 @@ public class TopicConfigManager extends ConfigManager {
         return this.topicConfigTable.get(topic);
     }
 
+    /**
+     * 若要发送消息的主题没有创建,则根据 autoCreateTopicEnable 的值进判断, 
+     * <p> 若 autoCreateTopicEnable=true,则创建主题,并将其持久化到../config/topics.json配置文件中,
+     * <p> 若 autoCreateTopicEnable=false,则不创建主题
+     * @param topic - 主题
+     * @param defaultTopic - 默认主题 TBW102
+     * @param remoteAddress - 客户端远程地址
+     * @param clientDefaultTopicQueueNums - 客户端默认主题队列数
+     * @param topicSysFlag
+     * @return
+     */
     public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic,
         final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
         TopicConfig topicConfig = null;
@@ -151,17 +177,22 @@ public class TopicConfigManager extends ConfigManager {
             if (this.lockTopicConfigTable.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     topicConfig = this.topicConfigTable.get(topic);
+                    // 判断 主题配置列表 是否已经存在要查找的主题,若已经存在则直接返回,若不存在则进行创建
                     if (topicConfig != null)
                         return topicConfig;
 
+                    //得到用于创建主题的默认主题
                     TopicConfig defaultTopicConfig = this.topicConfigTable.get(defaultTopic);
                     if (defaultTopicConfig != null) {
                         if (defaultTopic.equals(MixAll.DEFAULT_TOPIC)) {
+                        	//若autoCreateTopicEnable=false,则设置 [用于创建主题的默认主题]的perm=6,
+                        	//而 [用于创建主题的默认主题]若要能创建主题,则必须perm=7才行
                             if (!this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
                                 defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
                             }
                         }
 
+                        //判断 [用于创建主题的默认主题]是否拥有创建主题的权限,即perm=7
                         if (PermName.isInherited(defaultTopicConfig.getPerm())) {
                             topicConfig = new TopicConfig(topic);
 
@@ -193,12 +224,16 @@ public class TopicConfigManager extends ConfigManager {
                         log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]",
                             defaultTopic, topicConfig, remoteAddress);
 
+                        //向 [主题配置列表] 中添加新创建的主题
                         this.topicConfigTable.put(topic, topicConfig);
 
+                        //成功创建主题,更新当前主题的数据版本,该属性是namesrv判断数据是否变化的重要依据
                         this.dataVersion.nextVersion();
 
+                        //设置 [新创建主题标识] 为true
                         createNew = true;
 
+                        //将 [主题配置列表] 持久化到磁盘
                         this.persist();
                     }
                 } finally {
@@ -209,6 +244,7 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicInSendMessageMethod exception", e);
         }
 
+        // [新创建主题标识] 为true,则向所有的namesrv注册变化后的主题配置信息
         if (createNew) {
             this.brokerController.registerBrokerAll(false, true);
         }
@@ -369,6 +405,10 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 构建 [主题配置序列化包装类]
+     * @return
+     */
     public TopicConfigSerializeWrapper buildTopicConfigSerializeWrapper() {
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
         topicConfigSerializeWrapper.setTopicConfigTable(this.topicConfigTable);
@@ -400,9 +440,14 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 编码存储内容
+     * @param prettyFormat 是否格式
+     */
     public String encode(final boolean prettyFormat) {
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
         topicConfigSerializeWrapper.setTopicConfigTable(this.topicConfigTable);
+        // [编码存储内容]的数据版本
         topicConfigSerializeWrapper.setDataVersion(this.dataVersion);
         return topicConfigSerializeWrapper.toJson(prettyFormat);
     }

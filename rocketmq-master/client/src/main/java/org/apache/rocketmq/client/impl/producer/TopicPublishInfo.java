@@ -90,6 +90,11 @@ public class TopicPublishInfo {
         this.haveTopicRouterInfo = haveTopicRouterInfo;
     }
 
+    /**
+     * 选择一个消息队列
+     * @param lastBrokerName - 上一个broker
+     * @return
+     */
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
@@ -108,6 +113,10 @@ public class TopicPublishInfo {
         }
     }
 
+    /**
+     * 通过一个算法,从 messageQueueList(主题对应的消息队列列表)中取出一个消息队列进行返回
+     * @return
+     */
     public MessageQueue selectOneMessageQueue() {
         int index = this.sendWhichQueue.getAndIncrement();
         int pos = Math.abs(index) % this.messageQueueList.size();

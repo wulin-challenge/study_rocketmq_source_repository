@@ -91,9 +91,10 @@ public abstract class ConfigManager {
     public abstract void decode(final String jsonString);
 
     /**
-     * 持久化
+     * 持久化到磁盘
      */
     public synchronized void persist() {
+    	// 编码存储内容
         String jsonString = this.encode(true);
         if (jsonString != null) {
             String fileName = this.configFilePath();

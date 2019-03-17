@@ -57,6 +57,11 @@ public class PermName {
         return (perm & PERM_WRITE) == PERM_WRITE;
     }
 
+    /**
+     * 判断 perm 参数是否继承权限,及 (perm & PERM_INHERIT) == PERM_INHERIT
+     * @param perm
+     * @return
+     */
     public static boolean isInherited(final int perm) {
         return (perm & PERM_INHERIT) == PERM_INHERIT;
     }

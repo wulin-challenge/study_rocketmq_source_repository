@@ -19,6 +19,10 @@ package org.apache.rocketmq.common;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+/**
+ * 远程数据版本,用于判断数据是否更新的重要标识
+ *
+ */
 public class DataVersion extends RemotingSerializable {
     private long timestamp = System.currentTimeMillis();
     private AtomicLong counter = new AtomicLong(0);

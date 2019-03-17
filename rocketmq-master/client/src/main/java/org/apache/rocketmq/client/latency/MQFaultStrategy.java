@@ -30,12 +30,20 @@ public class MQFaultStrategy {
     private final static Logger log = ClientLogger.getLog();
     
     /**
-     * 延迟容错
+     * 延迟容错/潜在故障容错
      */
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
 
+    /**
+     * 是否启用 Broker 故障延迟机制 
+     */
     private boolean sendLatencyFaultEnable = false;
 
+    /**
+     * 根据 currentLatency 本次消息发送延迟，从 latencyMax 尾部向前找到
+     * 第一个比 currentLatency 小的索引 index，如果没有找到，返回 0。 
+     * 然后 根据这个索引从notAvailableDuration 数组中取出对应的时间 ，在这个时长内,Broker 将设置为不可用。
+     */
     private long[] latencyMax = {50L, 100L, 550L, 1000L, 2000L, 3000L, 15000L};
     private long[] notAvailableDuration = {0L, 0L, 30000L, 60000L, 120000L, 180000L, 600000L};
 
@@ -63,7 +71,14 @@ public class MQFaultStrategy {
         this.sendLatencyFaultEnable = sendLatencyFaultEnable;
     }
 
+    /**
+     * 选择一个消息队列
+     * @param tpInfo - 主题发布信息
+     * @param lastBrokerName - 上一个brokerName
+     * @return
+     */
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
+    	//是否启用 Broker 故障延迟机制 
         if (this.sendLatencyFaultEnable) {
             try {
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
@@ -97,16 +112,31 @@ public class MQFaultStrategy {
             return tpInfo.selectOneMessageQueue();
         }
 
+        // 选择一个消息队列
         return tpInfo.selectOneMessageQueue(lastBrokerName);
     }
 
+    /**
+     * 更新失败条目 。
+     * @param brokerName broker 名称 。
+     * @param currentLatency 本次消息发送延迟时间 .
+     * @param isolation 
+     * <p> 是否隔离，该参数的含义如果为 true,则使用默认时长 30s 来计算 Broker 故障规避时长,
+     * 如果为 false, 则使用本次消息发送延迟时间来计算 Broker 故障规避时长 。
+     */
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {
+    	// 是否启用 Broker 故障延迟机制 
         if (this.sendLatencyFaultEnable) {
             long duration = computeNotAvailableDuration(isolation ? 30000 : currentLatency);
             this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration);
         }
     }
 
+    /**
+     * 计算当前不可用的时间间隔
+     * @param currentLatency - 消息发送故障延迟时 间 。
+     * @return
+     */
     private long computeNotAvailableDuration(final long currentLatency) {
         for (int i = latencyMax.length - 1; i >= 0; i--) {
             if (currentLatency >= latencyMax[i])

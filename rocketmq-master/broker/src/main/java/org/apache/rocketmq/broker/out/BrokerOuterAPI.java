@@ -97,6 +97,19 @@ public class BrokerOuterAPI {
         this.remotingClient.updateNameServerAddressList(lst);
     }
 
+    /**
+     * 则向所有的namesrv注册变化后的主题配置信息
+     * @param clusterName
+     * @param brokerAddr
+     * @param brokerName
+     * @param brokerId
+     * @param haServerAddr
+     * @param topicConfigWrapper
+     * @param filterServerList
+     * @param oneway
+     * @param timeoutMills
+     * @return
+     */
     public RegisterBrokerResult registerBrokerAll(
         final String clusterName,
         final String brokerAddr,
@@ -134,7 +147,7 @@ public class BrokerOuterAPI {
     }
 
     /**
-     * 向namesrv注册中心发送心跳请求,注册自己
+     * 向namesrv注册中心发送心跳请求或者主题第一次被创建,注册自己
      * @param namesrvAddr namesrv地址
      * @param clusterName 集群名称
      * @param brokerAddr broker地址

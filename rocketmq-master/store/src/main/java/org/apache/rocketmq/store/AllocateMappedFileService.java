@@ -32,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Create MappedFile in advance
+ * MappedFile 分配服务 。
+ * 
+ * <p> Create MappedFile in advance
  * 
  * <p> 提前创建MappedFile
  */
