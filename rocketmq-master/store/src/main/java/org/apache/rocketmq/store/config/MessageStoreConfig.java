@@ -30,14 +30,20 @@ public class MessageStoreConfig {
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
 
+    /**
+     * 保存commitlog的存储目录
+     */
     //The directory in which the commitlog is kept
-    //保存commitlog的目录
+    //保存commitlog的存储目录
     @ImportantField
     private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
         + File.separator + "commitlog";
 
-    // CommitLog file size,default is 1G
-    // CommitLog文件大小，默认为1G
+    /**
+     * CommitLog file size,default is 1G
+     * 
+     * <p> CommitLog文件大小，默认为1G
+     */
     private int mapedFileSizeCommitLog = 1024 * 1024 * 1024;
     // ConsumeQueue file size,default is 30W
     // ConsumeQueue文件大小，默认为30W
@@ -53,15 +59,20 @@ public class MessageStoreConfig {
     // 过滤map的位数。 这将由计算过滤map的管道设置。
     private int bitMapLengthConsumeQueueExt = 64;
 
+    /**
+     * FlushRealTimeService线程任务运行间隔.
+     */
     // CommitLog flush interval
     // flush data to disk
     // CommitLog刷新间隔将数据刷新到磁盘
     @ImportantField
     private int flushIntervalCommitLog = 500;
 
+    /**
+     * CommitRealTimeService线程间隔时间,默认200ms
+     */
     // Only used if TransientStorePool enabled
     // flush data to FileChannel
-    
     // 仅在TransientStorePool启用刷新数据到FileChannel时使用
     @ImportantField
     private int commitIntervalCommitLog = 200;
@@ -74,6 +85,9 @@ public class MessageStoreConfig {
      */
     private boolean useReentrantLockWhenPutMessage = false;
 
+    /**
+     * 默认为false,表示await方法等待；如果为true,表示使用Thread.sleep方法等待.
+     */
     // Whether schedule flush,default is real-time
     // 是否定时刷新，默认是实时的
     @ImportantField
@@ -84,19 +98,41 @@ public class MessageStoreConfig {
     // Resource reclaim interval
     // 资源回收间隔
     private int cleanResourceInterval = 10000;
+    
+    /**
+     * 删除物理文件的间隔,因为在一次清除过程中,可能需要被删除的文件不止一个,该值指定两次删除文件的问隔时间.
+     */
     // CommitLog removal interval
     // CommitLog删除间隔
     private int deleteCommitLogFilesInterval = 100;
     // ConsumeQueue removal interval
     // ConsumeQueue删除间隔
     private int deleteConsumeQueueFilesInterval = 100;
+    
+    /**
+     * 在清除过期文件时,如果该文件被其他线程所占用(引用次数大于0,比如读取消息),此时会阻止此次删除任务,
+     * 同时在第一次试图删除该文件时记录当前时间戳,destroyMapedFilelntervalForcibly表示第一次拒绝删除之后能保留的最大时间,
+     * 在此时间内,同样可以被拒绝删除,同时会将引用减少1000个,超过该时间间隔后,文件将被强制删除.
+     */
     private int destroyMapedFileIntervalForcibly = 1000 * 120;
     private int redeleteHangedFileInterval = 1000 * 120;
+    
+    /**
+     * 表示每天凌晨4点执行定时器删除数据
+     */
     // When to delete,default is at 4 am
     // 何时删除，默认为凌晨4点
     @ImportantField
     private String deleteWhen = "04";
+    
+    /**
+     * 磁盘使用率是否到了75%
+     */
     private int diskMaxUsedSpaceRatio = 75;
+    
+    /**
+     * 文件保留时间,也就是从最后一次更新时间到现在,如果超过了该时间,则认为是过期文件,可以被删除.
+     */
     // The number of hours to keep a log file before deleting it (in hours)
     // 在删除日志文件之前保留日志文件的小时数（以小时为单位）
     @ImportantField
@@ -112,9 +148,17 @@ public class MessageStoreConfig {
     // This check adds some overhead,so it may be disabled in cases seeking extreme performance.
     // 是否检查CRC32消费的记录。 这可确保消息不会发生线上或磁盘损坏。 此检查会增加一些开销，因此在寻求极端性能的情况下可能会被禁用。
     private boolean checkCRCOnRecover = true;
+    
+    /**
+     * 一次刷写任务至少包含页数,如果待刷写数据不足,小于该参数配置的值,将忽略本次刷写任务,默认4页.
+     */
     // How many pages are to be flushed when flush CommitLog
     // 刷新CommitLog时要刷新多少页
     private int flushCommitLogLeastPages = 4;
+    
+    /**
+     * 一次提交任务至少包含页数,如果待提交数据不足,小于该参数配置的值,将忽略本次提交任务,默认4页.
+     */
     // How many pages are to be committed when commit data to file
     // 将数据提交到文件时要提交的页数
     private int commitCommitLogLeastPages = 4;
@@ -124,7 +168,15 @@ public class MessageStoreConfig {
     // How many pages are to be flushed when flush ConsumeQueue
     // 刷新ConsumeQueue时要刷新多少页
     private int flushConsumeQueueLeastPages = 2;
+    
+    /**
+     * 两次真实刷写任务最大间隔， 默认 10s 。
+     */
     private int flushCommitLogThoroughInterval = 1000 * 10;
+    
+    /**
+     * 两次真实提交最大间隔，默认 200ms
+     */
     private int commitCommitLogThoroughInterval = 200;
     private int flushConsumeQueueThoroughInterval = 1000 * 60;
     @ImportantField
@@ -158,6 +210,10 @@ public class MessageStoreConfig {
     private int syncFlushTimeout = 1000 * 5;
     private String messageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h";
     private long flushDelayOffsetInterval = 1000 * 10;
+    
+    /**
+     * 是否强制清除过期文件
+     */
     @ImportantField
     private boolean cleanFileForciblyEnable = true;
     private boolean warmMapedFileEnable = false;
@@ -213,6 +269,10 @@ public class MessageStoreConfig {
         this.warmMapedFileEnable = warmMapedFileEnable;
     }
 
+    /**
+     * 得到commitLog映射文件的大小
+     * @return
+     */
     public int getMapedFileSizeCommitLog() {
         return mapedFileSizeCommitLog;
     }
@@ -255,6 +315,10 @@ public class MessageStoreConfig {
         this.bitMapLengthConsumeQueueExt = bitMapLengthConsumeQueueExt;
     }
 
+    /**
+     * 得到 FlushRealTimeService线程任务运行间隔.
+     * @return
+     */
     public int getFlushIntervalCommitLog() {
         return flushIntervalCommitLog;
     }
@@ -307,6 +371,10 @@ public class MessageStoreConfig {
         this.checkCRCOnRecover = checkCRCOnRecover;
     }
 
+    /**
+     * 得到 commitlog的存储目录
+     * @return
+     */
     public String getStorePathCommitLog() {
         return storePathCommitLog;
     }
@@ -315,6 +383,10 @@ public class MessageStoreConfig {
         this.storePathCommitLog = storePathCommitLog;
     }
 
+    /**
+     * 表示每天凌晨4点执行定时器删除数据
+     * @return
+     */
     public String getDeleteWhen() {
         return deleteWhen;
     }
@@ -323,6 +395,10 @@ public class MessageStoreConfig {
         this.deleteWhen = deleteWhen;
     }
 
+    /**
+     * 得到磁盘最大空间使用率
+     * @return
+     */
     public int getDiskMaxUsedSpaceRatio() {
         if (this.diskMaxUsedSpaceRatio < 10)
             return 10;
@@ -337,6 +413,10 @@ public class MessageStoreConfig {
         this.diskMaxUsedSpaceRatio = diskMaxUsedSpaceRatio;
     }
 
+    /**
+     * 删除物理文件的间隔,因为在一次清除过程中,可能需要被删除的文件不止一个,该值指定两次删除文件的问隔时间.
+     * @return
+     */
     public int getDeleteCommitLogFilesInterval() {
         return deleteCommitLogFilesInterval;
     }
@@ -385,6 +465,9 @@ public class MessageStoreConfig {
         this.maxTransferCountOnMessageInDisk = maxTransferCountOnMessageInDisk;
     }
 
+    /**
+     * 一次刷写任务至少包含页数,如果待刷写数据不足,小于该参数配置的值,将忽略本次刷写任务,默认4页.
+     */
     public int getFlushCommitLogLeastPages() {
         return flushCommitLogLeastPages;
     }
@@ -401,6 +484,10 @@ public class MessageStoreConfig {
         this.flushConsumeQueueLeastPages = flushConsumeQueueLeastPages;
     }
 
+    /**
+     * 两次真实刷写任务最大间隔， 默认 10s 。
+     * @return
+     */
     public int getFlushCommitLogThoroughInterval() {
         return flushCommitLogThoroughInterval;
     }
@@ -417,6 +504,12 @@ public class MessageStoreConfig {
         this.flushConsumeQueueThoroughInterval = flushConsumeQueueThoroughInterval;
     }
 
+    /**
+     * 在清除过期文件时,如果该文件被其他线程所占用(引用次数大于0,比如读取消息),此时会阻止此次删除任务,
+     * 同时在第一次试图删除该文件时记录当前时间戳,destroyMapedFilelntervalForcibly表示第一次拒绝删除之后能保留的最大时间,
+     * 在此时间内,同样可以被拒绝删除,同时会将引用减少1000个,超过该时间间隔后,文件将被强制删除.
+     * @return
+     */
     public int getDestroyMapedFileIntervalForcibly() {
         return destroyMapedFileIntervalForcibly;
     }
@@ -425,6 +518,10 @@ public class MessageStoreConfig {
         this.destroyMapedFileIntervalForcibly = destroyMapedFileIntervalForcibly;
     }
 
+    /**
+     * 文件保留时间,也就是从最后一次更新时间到现在,如果超过了该时间,则认为是过期文件,可以被删除.
+     * @return
+     */
     public int getFileReservedTime() {
         return fileReservedTime;
     }
@@ -577,6 +674,10 @@ public class MessageStoreConfig {
         this.flushDelayOffsetInterval = flushDelayOffsetInterval;
     }
 
+    /**
+     * 是否强制清除过期文件
+     * @return
+     */
     public boolean isCleanFileForciblyEnable() {
         return cleanFileForciblyEnable;
     }
@@ -593,6 +694,10 @@ public class MessageStoreConfig {
         this.messageIndexSafe = messageIndexSafe;
     }
 
+    /**
+     * 默认为false,表示await方法等待；如果为true,表示使用Thread.sleep方法等待.
+     * @return
+     */
     public boolean isFlushCommitLogTimed() {
         return flushCommitLogTimed;
     }
@@ -636,6 +741,8 @@ public class MessageStoreConfig {
     /**
      * Enable transient commitLog store poll only if transientStorePoolEnable is true and the FlushDiskType is
      * ASYNC_FLUSH
+     * 
+     * <p> 仅当transientStorePoolEnable为true且FlushDiskType为ASYNC_FLUSH时才启用瞬态commitLog存储轮询
      *
      * @return <tt>true</tt> or <tt>false</tt>
      */
@@ -656,6 +763,10 @@ public class MessageStoreConfig {
         this.transientStorePoolSize = transientStorePoolSize;
     }
 
+    /**
+     * 得到 CommitRealTimeService线程间隔时间,默认200ms
+     * @return
+     */
     public int getCommitIntervalCommitLog() {
         return commitIntervalCommitLog;
     }
@@ -680,6 +791,10 @@ public class MessageStoreConfig {
         this.useReentrantLockWhenPutMessage = useReentrantLockWhenPutMessage;
     }
 
+    /**
+     * 得到 一次提交任务至少包含页数,如果待提交数据不足,小于该参数配置的值,将忽略本次提交任务,默认4页.
+     * @return
+     */
     public int getCommitCommitLogLeastPages() {
         return commitCommitLogLeastPages;
     }
@@ -688,6 +803,10 @@ public class MessageStoreConfig {
         this.commitCommitLogLeastPages = commitCommitLogLeastPages;
     }
 
+    /**
+     * 得到 两次真实提交最大间隔，默认 200ms
+     * @return
+     */
     public int getCommitCommitLogThoroughInterval() {
         return commitCommitLogThoroughInterval;
     }

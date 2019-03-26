@@ -220,7 +220,8 @@ public interface MessageStore {
     long getMaxPhyOffset();
 
     /**
-     * Get the minimum commit log offset. - 获取最小提交日志偏移量。
+     * 最小物理偏移量
+     * <p> et the minimum commit log offset. - 获取最小提交日志偏移量。
      *
      * @return minimum commit log offset. - 最小提交日志偏移量。
      */

@@ -20,13 +20,45 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * IndexHeader:包含40个字节,记录该IndexFile的统计信息
+ *
+ */
 public class IndexHeader {
+	
+	/**
+	 * indexHeader的长度
+	 */
     public static final int INDEX_HEADER_SIZE = 40;
+    
+    /**
+     * 该索引文件中包含消息的最小存储时间.
+     */
     private static int beginTimestampIndex = 0;
+    
+    /**
+     * 该索引文件中包含消息的最大存储时间.
+     */
     private static int endTimestampIndex = 8;
+    
+    /**
+     * 该索引文件中包含消息的最小物理偏移量(commitlog文件偏移量).
+     */
     private static int beginPhyoffsetIndex = 16;
+    
+    /**
+     * 该索引文件中包含消息的最大物理偏移量(commitlog文件偏移量).
+     */
     private static int endPhyoffsetIndex = 24;
+    
+    /**
+     * hashslot个数,并不是hash槽使用的个数,在这里意义不大.
+     */
     private static int hashSlotcountIndex = 32;
+    
+    /**
+     * Index条目列表当前已使用的个数,Index条目在Index条目列表中按顺序存储.
+     */
     private static int indexCountIndex = 36;
     private final ByteBuffer byteBuffer;
     
@@ -56,7 +88,7 @@ public class IndexHeader {
     private AtomicInteger hashSlotCount = new AtomicInteger(0);
 
     /**
-     * 构建的索引个数；
+     * 构建的索引个数/当前已使用条目
      */
     private AtomicInteger indexCount = new AtomicInteger(1);
 
@@ -132,6 +164,10 @@ public class IndexHeader {
         this.byteBuffer.putInt(hashSlotcountIndex, value);
     }
 
+    /**
+     * 得到构建的索引个数/得到当前已使用条目
+     * @return
+     */
     public int getIndexCount() {
         return indexCount.get();
     }

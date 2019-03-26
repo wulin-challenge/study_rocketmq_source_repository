@@ -119,12 +119,20 @@ public class RunningFlags {
         return false;
     }
 
+    /**
+     * 标记存储文件所在的磁盘是否已经满了
+     * @return
+     */
     public boolean getAndMakeDiskFull() {
         boolean result = !((this.flagBits & DISK_FULL_BIT) == DISK_FULL_BIT);
         this.flagBits |= DISK_FULL_BIT;
         return result;
     }
 
+    /**
+     * 磁盘是否能正常使用的标记
+     * @return
+     */
     public boolean getAndMakeDiskOK() {
         boolean result = !((this.flagBits & DISK_FULL_BIT) == DISK_FULL_BIT);
         this.flagBits &= ~DISK_FULL_BIT;

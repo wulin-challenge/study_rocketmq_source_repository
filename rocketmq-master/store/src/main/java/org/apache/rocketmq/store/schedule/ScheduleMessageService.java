@@ -43,6 +43,10 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 加载延迟队列,RocketMQ定时消息相关
+ *
+ */
 public class ScheduleMessageService extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -141,6 +145,9 @@ public class ScheduleMessageService extends ConfigManager {
         return this.encode(false);
     }
 
+    /**
+     * 加载延迟队列,RocketMQ定时消息相关
+     */
     public boolean load() {
         boolean result = super.load();
         result = result && this.parseDelayLevel();

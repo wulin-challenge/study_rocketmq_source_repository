@@ -52,13 +52,40 @@ public class DispatchRequest {
      * 队列位置
      */
     private final long consumeQueueOffset;
+    
+    /**
+     * 消息索引key.多个索引key用空格隔开,例如"key1 key2".
+     */
     private final String keys;
+    
+    /**
+     * 是否成功解析到完整的消息.
+     */
     private final boolean success;
+    
+    /**
+     * 消息唯一键 。
+     */
     private final String uniqKey;
 
+    /**
+     * 消息系统标记.
+     */
     private final int sysFlag;
+    
+    /**
+     * 消息预处理事务偏移量.
+     */
     private final long preparedTransactionOffset;
+    
+    /**
+     * 消息属性.
+     */
     private final Map<String, String> propertiesMap;
+    
+    /**
+     * 位图 .
+     */
     private byte[] bitMap;
 
     public DispatchRequest(

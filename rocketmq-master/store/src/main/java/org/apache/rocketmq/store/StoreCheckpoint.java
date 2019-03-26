@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 文件刷盘检测点 。
+ * <p> 详细: 加载存储检测点,检测点主要记录commitlog文件、Consumequeue文件、Index索引文件的刷盘点,将在下文的文件刷盘机制中再次提交.
  *
  */
 public class StoreCheckpoint {
@@ -36,10 +37,27 @@ public class StoreCheckpoint {
     private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+    
+    /**
+     * commitlog文件刷盘时间点.
+     */
     private volatile long physicMsgTimestamp = 0;
+    
+    /**
+     * 消息消费队列文件刷盘时间点.
+     */
     private volatile long logicsMsgTimestamp = 0;
+    
+    /**
+     * 索引文件刷盘时间点.
+     */
     private volatile long indexMsgTimestamp = 0;
 
+    /**
+     * 加载存储检测点,检测点主要记录commitlog文件、Consumequeue文件、Index索引文件的刷盘点,将在下文的文件刷盘机制中再次提交.
+     * @param scpPath
+     * @throws IOException
+     */
     public StoreCheckpoint(final String scpPath) throws IOException {
         File file = new File(scpPath);
         MappedFile.ensureDirOK(file.getParent());
@@ -90,6 +108,10 @@ public class StoreCheckpoint {
         return physicMsgTimestamp;
     }
 
+    /**
+     * 设置 commitlog文件刷盘时间点.
+     * @param physicMsgTimestamp
+     */
     public void setPhysicMsgTimestamp(long physicMsgTimestamp) {
         this.physicMsgTimestamp = physicMsgTimestamp;
     }

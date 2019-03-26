@@ -89,6 +89,11 @@ public class UtilAll {
         return System.currentTimeMillis() - beginTime;
     }
 
+    /**
+     * 比较当前时间与传入的时间是否相等,若相等则返回true,若不相等,则返回false
+     * @param when 要比较的时间,注意是小时
+     * @return
+     */
     public static boolean isItTimeToDo(final String when) {
         String[] whiles = when.split(";");
         if (whiles.length > 0) {
@@ -189,6 +194,11 @@ public class UtilAll {
             cal.get(Calendar.SECOND));
     }
 
+    /**
+     * 磁盘空间被使用的比率
+     * @param path 文件路径
+     * @return
+     */
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty())
             return -1;
@@ -199,12 +209,16 @@ public class UtilAll {
             if (!file.exists())
                 return -1;
 
+            //返回此抽象路径名指定的分区大小。
             long totalSpace = file.getTotalSpace();
 
             if (totalSpace > 0) {
+            	//返回此抽象路径名指定的分区中未分配的字节数。 
                 long freeSpace = file.getFreeSpace();
+                //被使用的磁盘空间
                 long usedSpace = totalSpace - freeSpace;
 
+                //得到被使用磁盘空间的比率
                 return usedSpace / (double) totalSpace;
             }
         } catch (Exception e) {

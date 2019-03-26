@@ -29,8 +29,16 @@ import org.slf4j.LoggerFactory;
 
 public class IndexFile {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    
+    /**
+     * hashSlot的大小
+     */
     private static int hashSlotSize = 4;
     private static int indexSize = 20;
+    
+    /**
+     * 非法索引
+     */
     private static int invalidIndex = 0;
     /**
      * hash槽数量
@@ -38,7 +46,7 @@ public class IndexFile {
     private final int hashSlotNum;
     
     /**
-     * 索引数量
+     * 索引数量/最大条目数
      * <p> 注意:一个索引文件最多能创建的索引数量
      */
     private final int indexNum;
@@ -110,16 +118,23 @@ public class IndexFile {
 
     /**
      * 向index文件写入索引消息
-     * @param key - 索引key
-     * @param phyOffset - 物理偏移量
-     * @param storeTimestamp - 存储时间戳
+     * @param key - 消息索引key
+     * @param phyOffset - 消息物理偏移量
+     * @param storeTimestamp - 消息存储时间戳
      * @return
      */
     public boolean putKey(final String key, final long phyOffset, final long storeTimestamp) {
+    	//如果当前已使用条目大于等于允许最大条目数时,则返回fasle,表示当前索引文件已写满.
         if (this.indexHeader.getIndexCount() < this.indexNum) {
+        	//将索引key进行hash的hash方法
             int keyHash = indexKeyHashMethod(key);
+            
+            //如果当前索引文件未写满则根据key算出key的hashcode,然后keyHash对hash槽数量取余定位到hasbcod巳对应的hash槽下标
             int slotPos = keyHash % this.hashSlotNum;
             
+            /**
+             * hashcode 对应的 hash 槽的物理地址为 IndexHeader 头部（40 字节）加上下标乘以每个 hash 槽的大小（4 字节） 。
+             */
             //首先根据 key 的 Hash 值计算出 absSlotPos 值；(absSlotPos:绝对哈希槽位置)
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
@@ -232,11 +247,24 @@ public class IndexFile {
         return result;
     }
 
+    /**
+     * 根据 索引 key 查找消息
+     * @param phyOffsets 查找到的消息物理偏移量.
+     * @param key 索引 key 
+     * @param maxNum 本次查找最大消息条数
+     * @param begin 开始时间戳 。
+     * @param end 结束时间戳 。
+     * @param lock
+     */
     public void selectPhyOffset(final List<Long> phyOffsets, final String key, final int maxNum,
         final long begin, final long end, boolean lock) {
         if (this.mappedFile.hold()) {
+        	//将索引key进行hash的hash方法
             int keyHash = indexKeyHashMethod(key);
+            //然后keyHash对hash槽数量取余定位到hashcode对应的hash槽下标
             int slotPos = keyHash % this.hashSlotNum;
+            
+            //hashcode对应的hash槽的物理地址为IndexHeader头部(40字节)加上下标乘以每个hash槽的大小(4字节).
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
             FileLock fileLock = null;
@@ -252,14 +280,22 @@ public class IndexFile {
                 // fileLock = null;
                 // }
 
+                //如果对应的Hash槽中存储的数据小于1或大于当前索引条目个数则表示该HashCode没有对应的条目,直接返回.
                 if (slotValue <= invalidIndex || slotValue > this.indexHeader.getIndexCount()
                     || this.indexHeader.getIndexCount() <= 1) {
                 } else {
+                	
+                	/*
+                	 * 由于会存在hash冲突,根据slotValue定位该hash槽最新的一个Item条目,将存储的物理偏移加入
+                	 * 到phyOffsets中,然后继续验证Item条目中存储的上一个Index下标,如果大于等于l并且小于最大条目数,
+                	 * 则继续查找,否则结束查找.
+                	 */
                     for (int nextIndexToRead = slotValue; ; ) {
                         if (phyOffsets.size() >= maxNum) {
                             break;
                         }
 
+                        //根据Index下标定位到条目的起始物理偏移量,然后依次读取hashcode、物理偏移量、时间差、上一个条目的Index下标.
                         int absIndexPos =
                             IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                                 + nextIndexToRead * indexSize;
@@ -270,6 +306,11 @@ public class IndexFile {
                         long timeDiff = (long) this.mappedByteBuffer.getInt(absIndexPos + 4 + 8);
                         int prevIndexRead = this.mappedByteBuffer.getInt(absIndexPos + 4 + 8 + 4);
 
+                        /*
+                         * 如果存储的时间差小于0,则直接结束；如果hashcode匹配并且消息存储时间介于待查找
+                         * 时间start、end之间则将消息物理偏移量加入到phyOffsets,并验证条目的前一个Index索引,
+                         * 如果索引大于等于l并且小于Index条目数,则继续查找,否则结束整个查找.
+                         */
                         if (timeDiff < 0) {
                             break;
                         }

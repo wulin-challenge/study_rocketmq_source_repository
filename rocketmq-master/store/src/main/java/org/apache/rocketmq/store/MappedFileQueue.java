@@ -29,21 +29,47 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 映射文件队列
+ * 
+ * <p> MappedFileQueue是MappedFile的管理容器，MappedFileQueue是对存储目录的封装，
+ * 例如CommitLog文件的存储路径${ROCKET_HOME}/store/commitlog/,该目录下会存在多个内存映射文件(MappedFile)。
+ *
+ */
 public class MappedFileQueue {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final Logger LOG_ERROR = LoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
     private static final int DELETE_FILES_BATCH_MAX = 10;
 
+    /**
+     * 存储目 录 。
+     */
     private final String storePath;
 
+    /**
+     * 单个文件的存储大小 。
+     */
     private final int mappedFileSize;
 
+    /**
+     * MappedFile 文件集合 。
+     */
     private final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>();
 
+    /**
+     * 创建 MappedFile 服务类 。
+     */
     private final AllocateMappedFileService allocateMappedFileService;
 
+    /**
+     * 当前刷盘指针,表示该指针之前的所有数据全部持久化到磁盘.
+     */
     private long flushedWhere = 0;
+    
+    /**
+     * 当前数据提交指针,内存中 ByteBuffer当前的写指针,该值大于等于flushedWhere.
+     */
     private long committedWhere = 0;
 
     private volatile long storeTimestamp = 0;
@@ -74,7 +100,15 @@ public class MappedFileQueue {
         }
     }
 
+    /**
+     * 根据消息存储时间戳来查找 MappdFile.从 MappedFile 列表中第一个文件开始查找，
+     * 找到第一个最后一次更新时间大于待查找时间戳的文件，如果不存在，则返回最后一个MappedFile 文件 。
+     * 
+     * @param timestamp 要查找的时间戳
+     * @return
+     */
     public MappedFile getMappedFileByTime(final long timestamp) {
+    	//拷贝映射文件,若reservedMappedFiles=0,则拷贝所有的映射文件
         Object[] mfs = this.copyMappedFiles(0);
 
         if (null == mfs)
@@ -90,6 +124,11 @@ public class MappedFileQueue {
         return (MappedFile) mfs[mfs.length - 1];
     }
 
+    /**
+     * 拷贝映射文件,若reservedMappedFiles=0,则拷贝所有的映射文件
+     * @param reservedMappedFiles
+     * @return
+     */
     private Object[] copyMappedFiles(final int reservedMappedFiles) {
         Object[] mfs;
 
@@ -101,6 +140,14 @@ public class MappedFileQueue {
         return mfs;
     }
 
+    /**
+     * 删除offset之后的所有文件.遍历目录下的文件,如果文件的尾部偏移量小于offset则跳过该文件,如果尾部的偏移量大于offset,
+     * 则进一步比较offset与文件的开始偏移量,如果offset大于文件的起始偏移量,说明当前文件包含了有效偏移里,
+     * 设置MappedFile的flushedPosition和commitedPosition；如果offset小于文件的起始偏移量,说明该文件是有效文件后面创建的,
+     * 调用MappedFile#destory释放MappedFile占用的内存资源(内存映射与内存通道等),然后加入到待删除文件列表中,
+     * 最终调用deleteExpiredFile将文件从物理磁盘删除
+     * @param offset
+     */
     public void truncateDirtyFiles(long offset) {
         List<MappedFile> willRemoveFiles = new ArrayList<MappedFile>();
 
@@ -121,6 +168,10 @@ public class MappedFileQueue {
         this.deleteExpiredFile(willRemoveFiles);
     }
 
+    /**
+     * 删除过期文件
+     * @param files 要清除的过期文件
+     */
     void deleteExpiredFile(List<MappedFile> files) {
 
         if (!files.isEmpty()) {
@@ -256,6 +307,10 @@ public class MappedFileQueue {
         return getLastMappedFile(startOffset, true);
     }
 
+    /**
+     * 得到最后一个映射文件
+     * @return
+     */
     public MappedFile getLastMappedFile() {
         MappedFile mappedFileLast = null;
 
@@ -304,6 +359,10 @@ public class MappedFileQueue {
         return true;
     }
 
+    /**
+     * 获取存储文件最小偏移量
+     * @return
+     */
     public long getMinOffset() {
 
         if (!this.mappedFiles.isEmpty()) {
@@ -318,6 +377,10 @@ public class MappedFileQueue {
         return -1;
     }
 
+    /**
+     * 获取存储文件的最大偏移量.返回最后一个MappedFile文件的fileFromOffset加上MappedFile文件当前的写指针.
+     * @return
+     */
     public long getMaxOffset() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
@@ -326,6 +389,10 @@ public class MappedFileQueue {
         return 0;
     }
 
+    /**
+     * 返回存储文件当前的写指针.返回最后一个文件的 fileFromOffset加上当前写指针位置。
+     * @return
+     */
     public long getMaxWrotePosition() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
@@ -352,6 +419,25 @@ public class MappedFileQueue {
         }
     }
 
+    /**
+     * 删除过期文件
+     * 
+     * <p> 执行文件销毁与删除.从倒数第二个文件开始遍历,计算文件的最大存活时间(＝文件的最后一次更新时间＋文件存活时间(默认72小时)),
+     * 如果当前时间大于文件的最大存活时间或需要强制删除文件(当磁盘使用超过设定的阔值)时则执行MappedFiJe#destory方法,
+     * 清除MappedFile占有的相关资源,如果执行成功,将该文件加入到待删除文件列表中,
+     * 然后统一执行File#delete方法将文件从物理磁盘中删除.
+     * 
+     * @param expiredTime 文件的过期时间
+     * <p>
+     * @param deleteFilesInterval 删除物理文件的间隔,因为在一次清除过程中,可能需要被删除的文件不止一个,该值指定两次删除文件的间隔时间.
+     * <p>
+     * @param intervalForcibly 在清除过期文件时,如果该文件被其他线程所占用(引用次数大于0,比如读取消息),此时会阻止此次删除任务,
+     *  同时在第一次试图删除该文件时记录当前时间戳,destroyMapedFilelntervalForcibly表示第一次拒绝删除之后能保留的最大时间,
+     *  在此时间内,同样可以被拒绝删除,同时会将引用减少1000个,超过该时间间隔后,文件将被强制删除.
+     *  <p>
+     * @param cleanImmediately 是否立即清除
+     * @return
+     */
     public int deleteExpiredFileByTime(final long expiredTime,
         final int deleteFilesInterval,
         final long intervalForcibly,
@@ -441,11 +527,18 @@ public class MappedFileQueue {
         return deleteCount;
     }
 
+    /**
+     * 将内存数据刷盘到磁盘
+     * @param flushLeastPages 刷盘最小页数 ,flushLeastPages<=0,直接刷盘能刷盘的数据
+     * @return
+     */
     public boolean flush(final int flushLeastPages) {
         boolean result = true;
+        //按偏移量查找映射文件。
         MappedFile mappedFile = this.findMappedFileByOffset(this.flushedWhere, this.flushedWhere == 0);
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
+            //刷盘
             int offset = mappedFile.flush(flushLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.flushedWhere;
@@ -458,10 +551,17 @@ public class MappedFileQueue {
         return result;
     }
 
+    /**
+     * 根据 committedWhere(当前数据提交指针) 查找映射文件,让后进行数据移交
+     * @param commitLeastPages 为本次提交最小的页数，如果待提交数据不满commitLeastPages ，则不执行本次提交操作，待下次提交
+     * @return
+     */
     public boolean commit(final int commitLeastPages) {
         boolean result = true;
+        //按偏移量查找映射文件。
         MappedFile mappedFile = this.findMappedFileByOffset(this.committedWhere, this.committedWhere == 0);
         if (mappedFile != null) {
+        	//内存映射文件的提交动作由该 MappedFile的commit方法实现 
             int offset = mappedFile.commit(commitLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.committedWhere;
@@ -476,7 +576,7 @@ public class MappedFileQueue {
      * 
      * <p> 按偏移量查找映射文件。
      *
-     * @param offset Offset. - 偏移量
+     * @param offset Offset. - 要查找的偏移量
      * 
      * @param returnFirstOnNotFound If the mapped file is not found, then return the first one.
      * 
@@ -488,6 +588,7 @@ public class MappedFileQueue {
      */
     public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
         try {
+        	//得到第一个映射文件
             MappedFile mappedFile = this.getFirstMappedFile();
             if (mappedFile != null) {
                 int index = (int) ((offset / this.mappedFileSize) - (mappedFile.getFileFromOffset() / this.mappedFileSize));
@@ -517,6 +618,10 @@ public class MappedFileQueue {
         return null;
     }
 
+    /**
+     * 得到第一个映射文件
+     * @return 返回映射文件中的第一个
+     */
     public MappedFile getFirstMappedFile() {
         MappedFile mappedFileFirst = null;
 
@@ -533,6 +638,11 @@ public class MappedFileQueue {
         return mappedFileFirst;
     }
 
+    /**
+     * 按偏移量查找映射文件。
+     * @param offset 要查找的偏移量
+     * @return
+     */
     public MappedFile findMappedFileByOffset(final long offset) {
         return findMappedFileByOffset(offset, false);
     }
@@ -594,6 +704,10 @@ public class MappedFileQueue {
         }
     }
 
+    /**
+     * 得到当前刷盘指针,表示该指针之前的所有数据全部持久化到磁盘.
+     * @return
+     */
     public long getFlushedWhere() {
         return flushedWhere;
     }

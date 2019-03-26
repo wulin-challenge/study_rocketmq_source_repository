@@ -27,19 +27,48 @@ import org.slf4j.LoggerFactory;
 public class ConsumeQueue {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    /**
+     * 消费队列一个[存储单元]/[存储条目]的大小
+     * <p> 一个存储单元的结构: [commitLog offset](8个字节)+[size](4个字节)+[tag hashcode](8个字节)
+     * <p> [commitLog offset]:一条消息存储在commitlog映射文件中的偏移量
+     * <p> [size]:一条消息存储在commitlog映射文件中的大小
+     * <p> [tag hashcode]:一条消息的tag的hashcode
+     */
     public static final int CQ_STORE_UNIT_SIZE = 20;
     private static final Logger LOG_ERROR = LoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
     private final DefaultMessageStore defaultMessageStore;
 
+    /**
+     * 映射文件队列 
+     */
     private final MappedFileQueue mappedFileQueue;
+    
+    /**
+     * 消息主题
+     */
     private final String topic;
+    
+    /**
+     * 队列Id
+     */
     private final int queueId;
     private final ByteBuffer byteBufferIndex;
 
+    /**
+     * 消费队列存储文件路径
+     */
     private final String storePath;
+    
+    /**
+     * 消费队列的映射文件大小
+     */
     private final int mappedFileSize;
     private long maxPhysicOffset = -1;
+    
+    /**
+     * 该消费队列映射文件的最小逻辑偏移量
+     */
     private volatile long minLogicOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
 
@@ -160,6 +189,7 @@ public class ConsumeQueue {
      * @return
      */
     public long getOffsetInQueueByTime(final long timestamp) {
+    	// 根据消息存储时间戳来查找 MappdFile.
         MappedFile mappedFile = this.mappedFileQueue.getMappedFileByTime(timestamp);
         if (mappedFile != null) {
             long offset = 0;
@@ -167,7 +197,9 @@ public class ConsumeQueue {
             int high = 0;
             int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
             long leftIndexValue = -1L, rightIndexValue = -1L;
+            //最小物理偏移量
             long minPhysicOffset = this.defaultMessageStore.getMinPhyOffset();
+            //读取从指定位置开始的所有消息内容
             SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0);
             if (null != sbr) {
                 ByteBuffer byteBuffer = sbr.getByteBuffer();
@@ -184,6 +216,7 @@ public class ConsumeQueue {
                             continue;
                         }
 
+                        //根据收到某些消息或偏移存储时间，如果发生错误，则返回-1
                         long storeTime =
                             this.defaultMessageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
                         if (storeTime < 0) {
@@ -542,16 +575,29 @@ public class ConsumeQueue {
     }
 
     /**
-     * 根据消息序号索引获取 consumequeue 数据
-     * @param startIndex 开始索引
+     * 根据startlndex获取消息消费队列条目.
+     * @param startIndex 开始索引.即要消费的第几条[消费条目]
      * @return
      */
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
+    	//消费队列的映射文件大小
         int mappedFileSize = this.mappedFileSize;
+        
+        //CQ_STORE_UNIT_SIZE:消费队列一个[存储单元]/[存储条目]的大小 
+        //首先startindex*20得到在consumequeue中的物理偏移量
         long offset = startIndex * CQ_STORE_UNIT_SIZE;
+        
+        /*
+         * 如果该offset小于minLogicOffset[该消费队列映射文件的最小逻辑偏移量],则返回null,说明该消息已被删除；
+         * 如果大于minLogicOffset[该消费队列映射文件的最小逻辑偏移量],
+         * 则根据偏移量定位到具体的物理文件,然后通过offset与物理文大小取模获取在该文件的偏移量,从而从偏移量开始连续读取20个字节即可.
+         */
         if (offset >= this.getMinLogicOffset()) {
+        	//按偏移量查找映射文件。
             MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset);
             if (mappedFile != null) {
+            	//offset % mappedFileSize : 计算出该映射文件要查找的开始偏移量位置
+            	// 读取从指定位置开始的所有消息内容
                 SelectMappedBufferResult result = mappedFile.selectMappedBuffer((int) (offset % mappedFileSize));
                 return result;
             }
@@ -573,6 +619,10 @@ public class ConsumeQueue {
         return false;
     }
 
+    /**
+     * 得到该消费队列映射文件的最小逻辑偏移量
+     * @return
+     */
     public long getMinLogicOffset() {
         return minLogicOffset;
     }
@@ -589,6 +639,8 @@ public class ConsumeQueue {
     public long rollNextFile(final long index) {
         int mappedFileSize = this.mappedFileSize;
         int totalUnitsInFile = mappedFileSize / CQ_STORE_UNIT_SIZE;
+        
+        //首先获取一个文件包含多少个消息消费队列条目,减去index%totalUnitslnFile的目的是选中下一个文件的起始偏移量.
         return index + totalUnitsInFile - index % totalUnitsInFile;
     }
 
@@ -608,6 +660,10 @@ public class ConsumeQueue {
         this.maxPhysicOffset = maxPhysicOffset;
     }
 
+    /**
+     * 重置ConsumeQueue的maxPhysicOffset与minLogicOffset,然后调用MappedFileQueue的dest.
+     * 可方法将消息消费队列目录下的所有文件全部删除.
+     */
     public void destroy() {
         this.maxPhysicOffset = -1;
         this.minLogicOffset = 0;
