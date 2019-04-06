@@ -24,9 +24,12 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.slf4j.Logger;
 
 /**
- * Average Hashing queue algorithm
+ * AllocateMessageQueueAveragely:平均分配,推荐指数为5颗星.
+ * <p> 举例来说,如果现在有8个消息消费队列ql,q2,q3,q4,q5,q6,q7,q8,有3个消费者cl,c2,c3,那么根据该负载算法,消息队列分配如下:
+ * <p> c1:q1,q2,q3
+ * <p> c2:q4,q5,q6
+ * <p> c3:q7,q8
  * 
- * <p> 平均哈希队列算法
  */
 public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrategy {
     private final Logger log = ClientLogger.getLog();

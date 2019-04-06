@@ -47,9 +47,14 @@ public class RebalanceService extends ServiceThread {
         log.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
+        	
+        	/*
+        	 * RebalanceService线程默认每隔20s执行一次mqClientFactory.doRebalance()方法,
+        	 * 可以使用-Drocketmq.client.rebalance.waitlnterval=interval来改变默认值.
+        	 */
             this.waitForRunning(waitInterval);
             
-            /**
+            /*
              * 调用 MQClientInstance#doRebalance(...) 分配消息队列。目前有三种情况情况下触发：
              * <p> 1.等待超时，每 20s 调用一次。
              * <p> 2.PushConsumer 启动时，调用 rebalanceService#wakeup(...) 触发。

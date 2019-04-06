@@ -416,6 +416,11 @@ public class UtilAll {
         return str;
     }
 
+    /**
+     * 字符串是否为空
+     * @param str 字符串
+     * @return true:字符串为空,false:字符串不为空
+     */
     public static boolean isBlank(String str) {
         int strLen;
         if (str == null || (strLen = str.length()) == 0) {

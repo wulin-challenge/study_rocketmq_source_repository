@@ -32,6 +32,10 @@ import org.apache.rocketmq.common.protocol.ResponseCode;
 public class Validators {
     public static final String VALID_PATTERN_STR = "^[%|a-zA-Z0-9_-]+$";
     public static final Pattern PATTERN = Pattern.compile(VALID_PATTERN_STR);
+    
+    /**
+     * group 的最大字符串长度
+     */
     public static final int CHARACTER_MAX_LENGTH = 255;
 
     /**
@@ -47,17 +51,20 @@ public class Validators {
     }
 
     /**
-     * Validate group
+     * 验证 group 是否合法
      */
     public static void checkGroup(String group) throws MQClientException {
+    	//group 是否为空
         if (UtilAll.isBlank(group)) {
             throw new MQClientException("the specified group is blank", null);
         }
+        //group是否符合 PATTERN 正则表达式
         if (!regularExpressionMatcher(group, PATTERN)) {
             throw new MQClientException(String.format(
                 "the specified group[%s] contains illegal characters, allowing only %s", group,
                 VALID_PATTERN_STR), null);
         }
+        //group的最大长度是否大于CHARACTER_MAX_LENGTH[255]
         if (group.length() > CHARACTER_MAX_LENGTH) {
             throw new MQClientException("the specified group is longer than group max length 255.", null);
         }
@@ -65,6 +72,8 @@ public class Validators {
 
     /**
      * @return <tt>true</tt> if, and only if, the entire origin sequence matches this matcher's pattern
+     * 
+     * <p> 当且仅当整个原始序列与此匹配器的模式匹配时才为true
      */
     public static boolean regularExpressionMatcher(String origin, Pattern pattern) {
         if (pattern == null) {

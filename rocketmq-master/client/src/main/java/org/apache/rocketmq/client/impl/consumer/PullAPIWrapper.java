@@ -49,9 +49,21 @@ import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.slf4j.Logger;
 
+/**
+ * 拉取消息api包装类
+ *
+ */
 public class PullAPIWrapper {
     private final Logger log = ClientLogger.getLog();
+    
+    /**
+     * mq客户端实例,在用一个jvm中,该实例有且只有一个
+     */
     private final MQClientInstance mQClientFactory;
+    
+    /**
+     * 消费组
+     */
     private final String consumerGroup;
     private final boolean unitMode;
     
@@ -171,17 +183,18 @@ public class PullAPIWrapper {
     /**
      * 拉取消息核心方法
      *
-     * @param mq 消息队列
-     * @param subExpression 订阅表达式
+     * @param mq 从哪个消息消费队列拉取消息 。
+     * @param subExpression 消息过滤表达式 。
+     * @param expressionType 消息表达式类型，分为 TAG 、 SQL92 。
      * @param subVersion 订阅版本号
-     * @param offset 拉取队列开始位置
-     * @param maxNums 拉取消息数量
+     * @param offset 消息拉取偏移量 。
+     * @param maxNums 本次拉取最大消息条数，默认 32 条 。
      * @param sysFlag 拉取请求系统标识
-     * @param commitOffset 提交消费进度
-     * @param brokerSuspendMaxTimeMillis broker挂起请求最大时间
-     * @param timeoutMillis 请求broker超时时长
-     * @param communicationMode 通讯模式
-     * @param pullCallback 拉取回调
+     * @param commitOffset 当前 MessageQueue 的消费进度（内存中） 。
+     * @param brokerSuspendMaxTimeMillis 消息拉取过程中允许Broker挂起时间,默认15s
+     * @param timeoutMillis 消息拉取超时时间.
+     * @param communicationMode 消息拉取模式，默认为异步拉取 。
+     * @param pullCallback 从 Broker 拉取到消息后的回调方法 。
      * @return 拉取消息结果。只有通讯模式为同步时，才返回结果，否则返回null。
      * @throws MQClientException 当寻找不到 broker 时，或发生其他client异常
      * @throws RemotingException 当远程调用发生异常时
@@ -203,7 +216,10 @@ public class PullAPIWrapper {
         final PullCallback pullCallback
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
     	
-    	// 获取Broker信息
+    	/*
+    	 * 根据brokerName、BrokerId从MQClientlnstance中获取Broker地址,在整个RocketMQBroker的部署结构中,
+    	 * 相同名称的Broker构成主从结构,其BrokerId会不一样,在每次拉取消息后,会给出一个建议,下次拉取从主节点还是从节点拉取.
+    	 */
         FindBrokerResult findBrokerResult =
             this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
                 this.recalculatePullFromWhichNode(mq), false);
@@ -243,6 +259,10 @@ public class PullAPIWrapper {
             requestHeader.setSubVersion(subVersion);
             requestHeader.setExpressionType(expressionType);
 
+            /*
+             * 如果消息过滤模式为类过滤,则需要根据主题名称、broker地址找到注册在Broker上的FilterServer地址,
+             * 从FilterServer上拉取消息,否则从Broker上拉取消息.
+             */
             String brokerAddr = findBrokerResult.getBrokerAddr();
             if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
                 brokerAddr = computPullFromWhichFilterServer(mq.getTopic(), brokerAddr);

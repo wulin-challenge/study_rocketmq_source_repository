@@ -17,10 +17,20 @@
 
 package org.apache.rocketmq.remoting;
 
+/**
+ * 基于netty实现远程客户端和远程服务端的公共接口,该接口由如下两个实现接口
+ * <p> 1. RemotingClient : netty实现的远程客户端接口
+ * <p> 2. RemotingServer : netty实现的远程服务端接口
+ *
+ */
 public interface RemotingService {
     void start();
 
     void shutdown();
 
+    /**
+     * 注册rpc回调钩子
+     * @param rpcHook rpc回调钩子
+     */
     void registerRPCHook(RPCHook rpcHook);
 }

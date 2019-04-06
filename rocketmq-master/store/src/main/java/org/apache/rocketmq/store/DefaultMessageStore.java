@@ -281,6 +281,9 @@ public class DefaultMessageStore implements MessageStore {
             this.scheduleMessageService.start();
         }
 
+        /*
+         * 如果允许消 息重复 ， 设置重新推送偏移量为 Commitlog 文件的提交偏移量 ，如果不允许重复推送则设置重新推送偏移为 commitlog 当前最大的偏移量 。
+         */
         if (this.getMessageStoreConfig().isDuplicationEnable()) {
             this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
         } else {
@@ -508,11 +511,11 @@ public class DefaultMessageStore implements MessageStore {
     /**
      * 获取消息结果
      *
-     * @param group 消费分组
-     * @param topic 主题
-     * @param queueId 队列编号
-     * @param offset 队列位置
-     * @param maxMsgNums 消息数量
+     * @param group 消费组名称 。
+     * @param topic 主题名称 。
+     * @param queueId 队列ID
+     * @param offset 待拉取偏移量 。
+     * @param maxMsgNums 最大拉取消息条数 。
      * @param messageFilter 
      * @return 消息结果
      */
@@ -561,15 +564,35 @@ public class DefaultMessageStore implements MessageStore {
              * 对请求参数中的 queueoffset 进行有效性检验：若请求消息中的 queueoffset 
              * 在 minOffset 与 maxOffset 之间，则继续执行后续操作步骤读取消息
              */
+            /*
+             * maxOffset=0,表示当前消费队列中没有消息,拉取结果:NO_MESSAGE_IN_QUEUE.
+             * 如果当前Broker为主节点或offsetChecklnSlave为false,下次拉取偏移量依然为offset.如果当前Broker为从节点,
+             * offsetCheckinS!ave为true,设置下次拉取偏移量为0.
+             */
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
+                //待查找的队列偏移量 。
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
+                
+                /*
+                 * offset<minOffset,表示待拉取消息偏移量小于队列的起始偏移量,拉取结果为:OFFSET_TOO_SMALL.
+                 * 如果当前Broker为主节点或offsetChecklnSlave为false,下次拉取偏移量依然为offset.
+                 * 如果当前Broker为从节点并且offsetChecklnSlave为true,下次拉取偏移量设置为minOffset.
+                 */
             } else if (offset < minOffset) {
                 status = GetMessageStatus.OFFSET_TOO_SMALL;
                 nextBeginOffset = nextOffsetCorrection(offset, minOffset);
+                
+                /*
+                 * offset==maxOffset,如果待拉取偏移量等于队列最大偏移量,拉取结果:OFFSET_OVERFLOW_ONE.下次拉取偏移量依然为offset.
+                 */
             } else if (offset == maxOffset) {
                 status = GetMessageStatus.OFFSET_OVERFLOW_ONE;
                 nextBeginOffset = nextOffsetCorrection(offset, offset);
+                
+                /*
+                 * Offset>maxOffset,表示偏移量越界,拉取结果:OFFSET_OVERFLOW_BADLY.根据是否是主节点、从节点,同样校对下次拉取偏移量.
+                 */
             } else if (offset > maxOffset) {
                 status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
                 if (0 == minOffset) {
@@ -2060,7 +2083,7 @@ public class DefaultMessageStore implements MessageStore {
         private void doReput() {
             for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
 
-            	// TODO 疑问：这个是啥
+            	// 是否允许消息重复,true:允许消息重复,false:不允许消息重复
                 if (DefaultMessageStore.this.getMessageStoreConfig().isDuplicationEnable()
                     && this.reputFromOffset >= DefaultMessageStore.this.getConfirmOffset()) {
                     break;

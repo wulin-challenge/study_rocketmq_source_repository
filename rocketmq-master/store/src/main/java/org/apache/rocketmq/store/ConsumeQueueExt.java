@@ -441,6 +441,9 @@ public class ConsumeQueueExt {
 
     /**
      * Store unit.
+     * <p> 存储单元
+     * 
+     * <p> 一个存储单元的字节大小为20
      */
     public static class CqExtUnit {
         public static final short MIN_EXT_UNIT_SIZE

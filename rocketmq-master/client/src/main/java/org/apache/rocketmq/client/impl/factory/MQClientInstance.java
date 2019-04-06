@@ -90,6 +90,10 @@ public class MQClientInstance {
     private final String clientId;
     private final long bootTimestamp = System.currentTimeMillis();
     private final ConcurrentMap<String/* group */, MQProducerInner> producerTable = new ConcurrentHashMap<String, MQProducerInner>();
+    
+    /**
+     * 根据消费组名存储 DefaultMQPushConsumerImpl[默认的消息消费消息推模式实现] 或者 DefaultMQPullConsumerImpl[默认的消息消费消息拉模式实现]
+     */
     private final ConcurrentMap<String/* group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<String, MQConsumerInner>();
     private final ConcurrentMap<String/* group */, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<String, MQAdminExtInner>();
     private final NettyClientConfig nettyClientConfig;
@@ -110,6 +114,10 @@ public class MQClientInstance {
      */
     private final ConcurrentMap<String/* Broker Name */, HashMap<Long/* brokerId */, String/* address */>> brokerAddrTable =
         new ConcurrentHashMap<String, HashMap<Long, String>>();
+    
+    /**
+     * broker的版本列表
+     */
     private final ConcurrentMap<String/* Broker Name */, HashMap<String/* address */, Integer>> brokerVersionTable =
         new ConcurrentHashMap<String, HashMap<String, Integer>>();
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -119,6 +127,10 @@ public class MQClientInstance {
         }
     });
     private final ClientRemotingProcessor clientRemotingProcessor;
+    
+    /**
+     * 消息拉取服务线程， run 方法是其核心逻辑 。
+     */
     private final PullMessageService pullMessageService;
     private final RebalanceService rebalanceService;
     private final DefaultMQProducer defaultMQProducer;
@@ -254,15 +266,21 @@ public class MQClientInstance {
             switch (this.serviceState) {
                 case CREATE_JUST:
                     this.serviceState = ServiceState.START_FAILED;
+                    
                     // If not specified,looking address from name server
+                    // 如果未指定，则从名称服务器查找地址
                     if (null == this.clientConfig.getNamesrvAddr()) {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
+                    
                     // Start request-response channel
+                    //启动请求 - 响应通道
                     this.mQClientAPIImpl.start();
+                    
                     // Start various schedule tasks
                     this.startScheduledTask();
                     // Start pull service
+                    // 启动消息拉取服务线程
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();
@@ -325,11 +343,15 @@ public class MQClientInstance {
             }
         }, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
+        /*
+         * 持久化消费者消费消息的进度定时器
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
             public void run() {
                 try {
+                	//持久化消费者消费消息的进度
                     MQClientInstance.this.persistAllConsumerOffset();
                 } catch (Exception e) {
                     log.error("ScheduledTask persistAllConsumerOffset exception", e);
@@ -510,6 +532,9 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 持久化消费者消费消息的进度
+     */
     private void persistAllConsumerOffset() {
         Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
         while (it.hasNext()) {
@@ -929,6 +954,14 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 向 MQClientlnstance 注册消 费者，并启动 MQClientInstance ， 
+     * 在一个 JVM 中的所有消费者、生产者持有同一个 MQClientInstance, MQClientInstance 只会启动一次。
+     * 
+     * @param group 消费组
+     * @param consumer 消费者实例
+     * @return true:成功注册,false:注册失败,该group已经存在对应的 消费者实例
+     */
     public boolean registerConsumer(final String group, final MQConsumerInner consumer) {
         if (null == group || null == consumer) {
             return false;
@@ -1059,6 +1092,11 @@ public class MQClientInstance {
         return this.producerTable.get(group);
     }
 
+    /**
+     * 根据消费组名从MQClientInstance中获取消费者内部实现类MQConsumerInner
+     * @param group
+     * @return
+     */
     public MQConsumerInner selectConsumer(final String group) {
         return this.consumerTable.get(group);
     }
@@ -1154,6 +1192,12 @@ public class MQClientInstance {
         return null;
     }
 
+    /**
+     * 通过broker名称好broker地址查找版本号
+     * @param brokerName
+     * @param brokerAddr
+     * @return
+     */
     public int findBrokerVersion(String brokerName, String brokerAddr) {
         if (this.brokerVersionTable.containsKey(brokerName)) {
             if (this.brokerVersionTable.get(brokerName).containsKey(brokerAddr)) {

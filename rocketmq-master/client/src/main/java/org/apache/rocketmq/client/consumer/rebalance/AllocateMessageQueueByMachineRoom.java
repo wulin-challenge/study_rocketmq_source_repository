@@ -23,9 +23,7 @@ import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 /**
- * Computer room Hashing queue algorithm, such as Alipay logic room
- * 
- * <p> 计算机房哈希队列算法，如支付宝逻辑室
+ * AllocateMessageQueueByMachineRoom:根据Broker部署机房名,对每个消费者负责不同的Broker上的队列.
  */
 public class AllocateMessageQueueByMachineRoom implements AllocateMessageQueueStrategy {
 	

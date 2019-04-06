@@ -29,8 +29,11 @@ public class AnnotationFormattingUtil {
 		text = text.replace("。", ".");
 		text = text.replace("（", "(");
 		text = text.replace("）", ")");
+		text = text.replace("｛", "{");
+		text = text.replace("｝", "}");
 		text = text.replace("“", "\"");
 		text = text.replace("”", "\"");
+		text = text.replace("：", ":");
 		System.out.println(text);
 	}
 	

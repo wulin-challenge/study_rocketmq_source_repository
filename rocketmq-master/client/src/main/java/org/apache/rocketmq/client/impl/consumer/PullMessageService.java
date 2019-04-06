@@ -27,6 +27,10 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
+/**
+ * 消息拉取服务线程， run 方法是其核心逻辑 。
+ *
+ */
 public class PullMessageService extends ServiceThread {
     private final Logger log = ClientLogger.getLog();
     
@@ -104,6 +108,12 @@ public class PullMessageService extends ServiceThread {
      * @param pullRequest 拉取消息请求
      */
     private void pullMessage(final PullRequest pullRequest) {
+    	
+    	/*
+    	 * 根据消费组名从MQClientInstance中获取消费者内部实现类MQConsumerInner,
+    	 * 令人意外的是这里将consumer强制转换为DefaultMQPushConsumerImpl,也就是PullMessageService,该线程只为PUSH模式服务,
+    	 * 那拉模式如何拉取消息呢？其实细想也不难理解,PULL模式,RocketMQ只需要提供拉取消息API即可,具体由应用程序显示调用拉取API.
+    	 */
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
@@ -119,8 +129,12 @@ public class PullMessageService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
+            	/*
+            	 * 从pullRequestQueue中获取一个PullRequest消息拉取任务,如果pullRequestQueue为空,则线程将阻塞,直到有拉取任务被放入.
+            	 */
                 PullRequest pullRequest = this.pullRequestQueue.take();
                 if (pullRequest != null) {
+                	//调用pullMessage方法进行消息拉取.
                     this.pullMessage(pullRequest);
                 }
             } catch (InterruptedException e) {

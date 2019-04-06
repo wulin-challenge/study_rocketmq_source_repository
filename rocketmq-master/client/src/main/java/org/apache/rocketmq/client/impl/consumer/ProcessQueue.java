@@ -36,6 +36,12 @@ import org.slf4j.Logger;
 
 /**
  * Queue consumption snapshot
+ * 
+ * <p> 消息处理队列,从Broker拉取到的消息先存人ProccessQueue,然后再提交到消费者消费线程池消费.
+ * 
+ * <p> 详细: ProcessQueue是MessageQueue在消费端的重现、快照. PullMessageService从消息服务器默认每次拉取32条消息,
+ * 按消息的队列偏移量顺序存放在ProcessQueue中,PullMessageService然后将消息提交到消费者消费线程池,
+ * 消息成功消费后从ProcessQueue中移除.
  */
 public class ProcessQueue {
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
@@ -46,19 +52,27 @@ public class ProcessQueue {
     
     /**
      * 消息映射读写锁
+     * <p> 详细: 读写锁,控制多线程并发修改msgTreeMap.
      */
     private final ReadWriteLock lockTreeMap = new ReentrantReadWriteLock();
     
     /**
      * 消息映射
      * key：消息队列位置
+     * 
+     * <p> 详细: 消息存储容器,键为消息在ConsumeQueue中的偏移量,MessageExt:消息实体.
      */
     private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>();
     
     /**
      * 消息数
+     * <p> ProcessQueue 中总消息数。
      */
     private final AtomicLong msgCount = new AtomicLong();
+    
+    /**
+     * ProcessQueue 中消息总大小,即字节长度
+     */
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock lockConsume = new ReentrantLock();
     /**
@@ -71,13 +85,33 @@ public class ProcessQueue {
     
     /**
      * 添加消息最大队列位置
+     * <p> 当前 ProcessQueue 中包含的最大队列偏移量 。
      */
     private volatile long queueOffsetMax = 0L;
     
+    /**
+     * 当前 ProccesQueue 是否被丢弃 。
+     */
     private volatile boolean dropped = false;
+    
+    /**
+     * 上一次开始消息拉取时间戳 。
+     */
     private volatile long lastPullTimestamp = System.currentTimeMillis();
+    
+    /**
+     * 上一次消息消费时间戳 。
+     */
     private volatile long lastConsumeTimestamp = System.currentTimeMillis();
+    
+    /**
+     * 该处理队列是否被锁定,用于顺序消息
+     */
     private volatile boolean locked = false;
+    
+    /**
+     * 最后锁定时间戳,用于顺序消息
+     */
     private volatile long lastLockTimestamp = System.currentTimeMillis();
     
     /**
@@ -93,15 +127,24 @@ public class ProcessQueue {
      */
     private volatile long msgAccCnt = 0;
 
+    /**
+     * 判断锁是否过期,锁超时时间默认为30s.可以通过系统参数rocketmq.client.rebalance.lockMaxLiveTime来设置.
+     * @return
+     */
     public boolean isLockExpired() {
         return (System.currentTimeMillis() - this.lastLockTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;
     }
 
+    /**
+     * 判断PullMessageService是否空闲,默认120s,通过系统参数rocketmq.client.pull.pullMaxldleTime来设置.
+     * @return
+     */
     public boolean isPullExpired() {
         return (System.currentTimeMillis() - this.lastPullTimestamp) > PULL_MAX_IDLE_TIME;
     }
 
     /**
+     * 移除消费超时的消息,默认超过15分钟未消费的消息将延迟3个延迟级别再消费.
      * @param pushConsumer
      */
     public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {
@@ -157,6 +200,8 @@ public class ProcessQueue {
     /**
      * 添加消息，并返回是否提交给消费者
      * 返回true，当有新消息添加成功时，
+     * 
+     * <p> 添加消息,PullMessageService拉取消息后,先调用该方法将消息添加到ProcessQueue.
      *
      * @param msgs 消息
      * @return 是否提交给消费者
@@ -205,6 +250,11 @@ public class ProcessQueue {
         return dispatchToConsume;
     }
 
+    /**
+     * 获取当前消息最大间隔.getMaxSpan()/20并不能说明Procequeue中包含的消息个数,
+     * 但是能说明当前处理队列中第一条消息与最后一条消息的偏移量已经超过的消息个数.
+     * @return
+     */
     public long getMaxSpan() {
         try {
             this.lockTreeMap.readLock().lockInterruptibly();
@@ -271,6 +321,10 @@ public class ProcessQueue {
         return msgCount;
     }
 
+    /**
+     * 得到 消息总大小,即字节长度
+     * @return
+     */
     public AtomicLong getMsgSize() {
         return msgSize;
     }
@@ -291,6 +345,10 @@ public class ProcessQueue {
         this.locked = locked;
     }
 
+    /**
+     * 将 msgTreeMapTmp 中所有消息重新放入到 msgTreeMap 并清除 msgTreeMapTmp 。
+     * <p> 注意: msgTreeMapTmp 已经被删除
+     */
     public void rollback() {
         try {
             this.lockTreeMap.writeLock().lockInterruptibly();
@@ -305,6 +363,14 @@ public class ProcessQueue {
         }
     }
 
+    /**
+     * 将msgTreeMapTmp中的消息清除,表示成功处理该批消息.
+     * <p> 注意: msgTreeMapTmp 已经被删除
+     * <p> 详细: 提交,就是将该批消息从ProceeQueue中移除,维护msgCount(消息处理队列中消息条数)并获取消息消费的偏移量offset,
+     * 然后将该批消息从msgTreeMapTemp中移除,并返回待保存的消息消费进度(offset+1),从中可以看出offset表示消息消费队列的逻辑偏移量,
+     * 类似于数组的下标,代表第n个ConsumeQueue条目.
+     * @return
+     */
     public long commit() {
         try {
             this.lockTreeMap.writeLock().lockInterruptibly();
@@ -328,6 +394,10 @@ public class ProcessQueue {
         return -1;
     }
 
+    /**
+     * 重新消费该批消息 。
+     * @param msgs
+     */
     public void makeMessageToCosumeAgain(List<MessageExt> msgs) {
         try {
             this.lockTreeMap.writeLock().lockInterruptibly();
@@ -344,6 +414,11 @@ public class ProcessQueue {
         }
     }
 
+    /**
+     * 从 ProcessQueue 中取出 batchSize 条消息 。
+     * @param batchSize
+     * @return
+     */
     public List<MessageExt> takeMessags(final int batchSize) {
         List<MessageExt> result = new ArrayList<MessageExt>(batchSize);
         final long now = System.currentTimeMillis();

@@ -18,11 +18,36 @@ package org.apache.rocketmq.client.impl.consumer;
 
 import org.apache.rocketmq.common.message.MessageQueue;
 
+/**
+ * 拉请求实体
+ * @author ThinkPad
+ *
+ */
 public class PullRequest {
+	
+	/**
+	 * 消费组
+	 */
     private String consumerGroup;
+    
+    /**
+     * 待拉取消费队列 。
+     */
     private MessageQueue messageQueue;
+    
+    /**
+     * 消息处理队列,从Broker拉取到的消息先存人ProccessQueue,然后再提交到消费者消费线程池消费.
+     */
     private ProcessQueue processQueue;
+    
+    /**
+     * 待拉取的 MessageQueue 偏移量 。
+     */
     private long nextOffset;
+    
+    /**
+     * 是否被锁定 。
+     */
     private boolean lockedFirst = false;
 
     public boolean isLockedFirst() {
@@ -94,6 +119,10 @@ public class PullRequest {
             + ", nextOffset=" + nextOffset + "]";
     }
 
+    /**
+     * 得到 消息处理队列,从Broker拉取到的消息先存人ProccessQueue,然后再提交到消费者消费线程池消费.
+     * @return
+     */
     public ProcessQueue getProcessQueue() {
         return processQueue;
     }

@@ -91,7 +91,7 @@ public class ClientConfig {
     }
 
     /**
-     * 并改变生产者 的 instanceName 为进程 ID 。
+     * 改变生产者 的 instanceName 为进程 ID 。
      */
     public void changeInstanceNameToPID() {
         if (this.instanceName.equals("DEFAULT")) {

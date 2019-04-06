@@ -219,6 +219,10 @@ public class MessageStoreConfig {
     private boolean warmMapedFileEnable = false;
     private boolean offsetCheckInSlave = false;
     private boolean debugLockEnable = false;
+    
+    /**
+     * 是否允许消息重复,true:允许消息重复,false:不允许消息重复
+     */
     private boolean duplicationEnable = false;
     private boolean diskFallRecorded = true;
     private long osPageCacheBusyTimeOutMills = 1000;
@@ -237,10 +241,18 @@ public class MessageStoreConfig {
         this.debugLockEnable = debugLockEnable;
     }
 
+    /**
+     * 是否允许消息重复,true:允许消息重复,false:不允许消息重复
+     * @return
+     */
     public boolean isDuplicationEnable() {
         return duplicationEnable;
     }
 
+    /**
+     * 设置 是否允许消息重复,true:允许消息重复,false:不允许消息重复
+     * @param duplicationEnable 是否允许消息重复,true:允许消息重复,false:不允许消息重复
+     */
     public void setDuplicationEnable(final boolean duplicationEnable) {
         this.duplicationEnable = duplicationEnable;
     }

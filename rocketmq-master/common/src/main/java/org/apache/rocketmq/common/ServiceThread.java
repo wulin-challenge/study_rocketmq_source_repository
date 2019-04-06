@@ -30,6 +30,11 @@ public abstract class ServiceThread implements Runnable {
     protected final Thread thread;
     protected final CountDownLatch2 waitPoint = new CountDownLatch2(1);
     protected volatile AtomicBoolean hasNotified = new AtomicBoolean(false);
+    
+    /**
+     * while(!this.isStopped())这是一种通用的设计技巧,stopped声明为volatile,每执行一次业务逻辑检测一下其运行状态,
+     * 可以通过其他线程将stopped设置为true从而停止该线程.
+     */
     protected volatile boolean stopped = false;
 
     public ServiceThread() {

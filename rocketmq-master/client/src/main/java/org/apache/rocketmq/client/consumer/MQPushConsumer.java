@@ -49,12 +49,22 @@ public interface MQPushConsumer extends MQConsumer {
     @Deprecated
     void registerMessageListener(MessageListener messageListener);
 
+    /**
+     * 注册并发消息事件监昕器 。
+     * @param messageListener
+     */
     void registerMessageListener(final MessageListenerConcurrently messageListener);
 
+    /**
+     * 注册并发消息事件监昕器 。
+     * @param messageListener
+     */
     void registerMessageListener(final MessageListenerOrderly messageListener);
 
     /**
-     * Subscribe some topic
+     * 基于主题订阅消息 。
+     * 
+     * <p> Subscribe some topic
      * 
      * <p> 订阅一些主题
      *
@@ -67,7 +77,9 @@ public interface MQPushConsumer extends MQConsumer {
     void subscribe(final String topic, final String subExpression) throws MQClientException;
 
     /**
-     * Subscribe some topic
+     * 基于主题订阅消息，消息过滤方式使用类模式 。
+     * 
+     * <p> Subscribe some topic
      * 
      * <p> 订阅一些主题
      *

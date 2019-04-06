@@ -23,20 +23,38 @@ public interface MessageFilter {
     /**
      * match by tags code or filter bit map which is calculated when message received
      * and stored in consume queue ext.
+     * 
+     * <p> 通过标签代码匹配或过滤位图，该位图是在消息接收并存储在消耗队列ext中时计算的。
+     * <p> 详解: 根据 ConsumeQueue 判断消息是否匹配 。
      *
-     * @param tagsCode tagsCode
-     * @param cqExtUnit extend unit of consume queue
+     * @param tagsCode tagsCode 消息 tag 的 hashcode 。
+     * @param cqExtUnit consumequeue 条目扩展属性 。
+     * 
+     * <p> extend unit of consume queue
+     * 
+     * <p> 扩展消耗队列单元
      */
     boolean isMatchedByConsumeQueue(final Long tagsCode,
         final ConsumeQueueExt.CqExtUnit cqExtUnit);
 
     /**
-     * match by message content which are stored in commit log.
+     * 根据存储在 commitlog 文件中的内容判断消息是否匹配 。ByteBuffer msgBuffer ： 消息内容，如果为空， 该方法返回 true 。
+     * Map<String,String> properties ： 消息属性，主要用于表达式 SQL92 过滤模式 。
+     * 
+     * <p> match by message content which are stored in commit log.
      * <br>{@code msgBuffer} and {@code properties} are not all null.If invoked in store,
      * {@code properties} is null;If invoked in {@code PullRequestHoldService}, {@code msgBuffer} is null.
+     * 
+     * <p> 匹配存储在提交日志中的消息内容。msgBuffer和属性都不是null。如果在store中调用，则属性为null;
+     * 如果在PullRequestHoldService中调用，则msgBuffer为null。
      *
      * @param msgBuffer message buffer in commit log, may be null if not invoked in store.
+     * 
+     * <p> 提交日志中的消息缓冲区，如果未在存储中调用，则可以为null。
+     * 
      * @param properties message properties, should decode from buffer if null by yourself.
+     * 
+     * <p> 消息属性，如果自己为null，则应从缓冲区解码。
      */
     boolean isMatchedByCommitLog(final ByteBuffer msgBuffer,
         final Map<String, String> properties);

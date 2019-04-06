@@ -30,11 +30,14 @@ public interface AllocateMessageQueueStrategy {
      * Allocating by consumer id
      * 
      * <p> 按消费者ID分配
+     * <p> 详解: 消息负载算法如果没有特殊的要求,尽量使用AllocateMessageQueueAveragely、AllocateMessageQueueAveragelyByCircle,
+     * 因为分配算法比较直观.消息队列分配遵循一个消费者可以分配多个消息队列,但同一个消息队列只会分配给一个消费者,故如果消费者个数大于消息队列数量,
+     * 则有些消费者无法消费消息.
      *
      * @param consumerGroup current consumer group - 目前的消费组
      * @param currentCID current consumer id - 当前的消费者ID
-     * @param mqAll message queue set in current topic - 当前主题中设置的消息队列
-     * @param cidAll consumer set in current consumer group - 当前消费者组中的消费者
+     * @param mqAll message queue set in current topic - 当前主题中设置的所有消息队列
+     * @param cidAll consumer set in current consumer group - 当前消费者组中的所有消费者
      * @return The allocate result of given strategy - 给定策略的分配结果
      */
     List<MessageQueue> allocate(

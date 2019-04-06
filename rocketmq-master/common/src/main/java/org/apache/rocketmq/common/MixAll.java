@@ -99,6 +99,11 @@ public class MixAll {
         return wsAddr;
     }
 
+    /**
+     * 通过消费组构建重试消费组
+     * @param consumerGroup 消费组
+     * @return 
+     */
     public static String getRetryTopic(final String consumerGroup) {
         return RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
     }

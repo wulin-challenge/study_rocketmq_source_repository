@@ -424,6 +424,10 @@ public class ConsumeQueue {
         }
     }
 
+    /**
+     * 从该队列中得到最小逻辑偏移量的条目
+     * @return
+     */
     public long getMinOffsetInQueue() {
         return this.minLogicOffset / CQ_STORE_UNIT_SIZE;
     }

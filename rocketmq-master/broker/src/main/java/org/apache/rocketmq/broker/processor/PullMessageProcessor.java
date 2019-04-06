@@ -157,6 +157,9 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         ConsumerFilterData consumerFilterData = null;
         if (hasSubscriptionFlag) {
             try {
+            	/*
+            	 *根据主题、消息过滤表达式构建订阅消息实体.如果是不是TAG模式,构建过滤数据ConsumeFiIterData. 
+            	 */
                 subscriptionData = FilterAPI.build(
                     requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
                 );
@@ -234,6 +237,10 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        /*
+         * 构建消息过滤对象,ExpressionForRetryMessageFilt町,支持对重试主题的过滤,ExpressionMessageFilter,
+         * 不支持对重试主题的属性过滤,也就是如果是tag模式,执行isMatchedByCommitLog方法将直接返回true.
+         */
         MessageFilter messageFilter;
         if (this.brokerController.getBrokerConfig().isFilterSupportRetry()) {
             messageFilter = new ExpressionForRetryMessageFilter(subscriptionData, consumerFilterData,
@@ -559,6 +566,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 try {
                 	// 调用拉取请求。本次调用，设置不挂起请求。
                 	// 调用拉取消息请求。本次调用，设置即使请求不到消息，也不挂起请求。如果不设置，请求可能被无限挂起，被 Broker 无限循环。
+                	// brokerAllowSuspend=false,表示该请求不在挂起,从而避免了无限挂起
                     final RemotingCommand response = PullMessageProcessor.this.processRequest(channel, request, false);
 
                     if (response != null) {

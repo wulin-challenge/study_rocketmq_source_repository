@@ -38,6 +38,9 @@ import org.slf4j.Logger;
 
 /**
  * Remote storage implementation
+ * 
+ * <p> 远程存储实现
+ * <p> 当消息模式为集群模式时,客户端消费消息进度是存在broker上的,该类即为实现
  */
 public class RemoteBrokerOffsetStore implements OffsetStore {
     private final static Logger log = ClientLogger.getLog();
@@ -198,6 +201,8 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     /**
      * Update the Consumer Offset synchronously, once the Master is off, updated to Slave,
      * here need to be optimized.
+     * 
+     * <p> 同步更新Consumer Offset，一旦Master关闭，更新为Slave，这里需要进行优化。
      */
     @Override
     public void updateConsumeOffsetToBroker(MessageQueue mq, long offset, boolean isOneway) throws RemotingException,
@@ -230,10 +235,13 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     private long fetchConsumeOffsetFromBroker(MessageQueue mq) throws RemotingException, MQBrokerException,
         InterruptedException, MQClientException {
+    	//通过broker名称查找broker的地址,版本号等信息
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInAdmin(mq.getBrokerName());
         if (null == findBrokerResult) {
 
+        	//根据 topic从 NameServer注册中心得到路由数据,判断本地的路由数据是否为最新的,若不是最新的则更新本地的路由数据列表,并返回true,否则返回false
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(mq.getTopic());
+            //通过broker名称查找broker的地址,版本号等信息
             findBrokerResult = this.mQClientFactory.findBrokerAddressInAdmin(mq.getBrokerName());
         }
 
