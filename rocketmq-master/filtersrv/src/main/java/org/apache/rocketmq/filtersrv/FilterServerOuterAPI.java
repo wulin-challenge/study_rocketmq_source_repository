@@ -45,6 +45,23 @@ public class FilterServerOuterAPI {
         this.remotingClient.shutdown();
     }
 
+    /**
+     * 注册filter到broker上
+     * 
+     * <p> 详细: FilterServer在启动时向Broker注册自己,在Broker端维护该Broker的FilterServer信息, 
+     * 并定时监控FilterServer的状态,然后Broker通过与所有NameServer的心跳包向NameServer注册Broker上存储的FilterServer列表, 
+     * 指引消息消费者正确从FilterServer上拉取消息.
+     * 
+     * @param brokerAddr broker的地址
+     * @param filterServerAddr filterServer的地址
+     * @return
+     * @throws RemotingCommandException
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws InterruptedException
+     * @throws MQBrokerException
+     */
     public RegisterFilterServerResponseHeader registerFilterServerToBroker(
         final String brokerAddr,
         final String filterServerAddr

@@ -35,8 +35,16 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 消费者管理
+ *
+ */
 public class ConsumerManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    
+    /**
+     * 消费者客户端channel通道过期时间
+     */
     private static final long CHANNEL_EXPIRED_TIMEOUT = 1000 * 120;
     
     /**
@@ -150,6 +158,9 @@ public class ConsumerManager {
         }
     }
 
+    /**
+     * 扫描不是存活的生产者客户端channel通道,将其从 consumerTable 中剔除,并关闭该channel通道
+     */
     public void scanNotActiveChannel() {
         Iterator<Entry<String, ConsumerGroupInfo>> it = this.consumerTable.entrySet().iterator();
         while (it.hasNext()) {

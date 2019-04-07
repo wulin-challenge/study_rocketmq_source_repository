@@ -98,6 +98,11 @@ public class FiltersrvController {
             .registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
     }
 
+    /**
+     * FilterServer在启动时向Broker注册自己,在Broker端维护该Broker的FilterServer信息,
+     * 并定时监控FilterServer的状态,然后Broker通过与所有NameServer的心跳包向NameServer注册Broker上存储的FilterServer列表,
+     * 指引消息消费者正确从FilterServer上拉取消息.
+     */
     public void registerFilterServerToBroker() {
         try {
             RegisterFilterServerResponseHeader responseHeader =

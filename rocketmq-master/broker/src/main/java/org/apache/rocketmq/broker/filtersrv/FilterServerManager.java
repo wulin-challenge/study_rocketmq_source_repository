@@ -35,10 +35,21 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * filterServer服务端管理
+ *
+ */
 public class FilterServerManager {
 
+	/**
+	 * filterServer最大空闲时间
+	 */
     public static final long FILTER_SERVER_MAX_IDLE_TIME_MILLS = 30000;
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    
+    /**
+     * filterServer的channel通道列表
+     */
     private final ConcurrentMap<Channel, FilterServerInfo> filterServerTable =
         new ConcurrentHashMap<Channel, FilterServerInfo>(16);
     private final BrokerController brokerController;
@@ -64,6 +75,13 @@ public class FilterServerManager {
         }, 1000 * 5, 1000 * 30, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * FilterServer与Broker通过心跳维持FilterServer在Broker端的注册,同样在Broker每隔10s扫描一下该注册表,
+     * 如果30s内未收到FilterServer的注册信息,将关闭Broker与FilterServer的连接.
+     * Broker为了避免Broker端FilterServer的异常退出导致FilterServer进程越来越少,
+     * 同样提供一个定时任务每30s检测一下当前存活的FilterServer进程的个数,如果当前存活的FilterServer进程个数小于配置的数量,
+     * 则自动创建一个FilterrServer进程,
+     */
     public void createFilterServer() {
         int more =
             this.brokerController.getBrokerConfig().getFilterServerNums() - this.filterServerTable.size();
@@ -98,6 +116,13 @@ public class FilterServerManager {
         this.scheduledExecutorService.shutdown();
     }
 
+    /**
+     * 在Broker端处理REGISTER_FILTER_SERVER命令的核心实现为FilterServerManager,
+     * 其实现过程是先从filterServerTable中以网络通道为key获取FilterServerlnfo,如果不等于空,则更新一下上次更新时间为当前时间,
+     * 否则创建一个新的FilterServerlnfo对象并加入到filterServerTable路由表中.
+     * @param channel 客户端filter通道
+     * @param filterServerAddr filter服务地址
+     */
     public void registerFilterServer(final Channel channel, final String filterServerAddr) {
         FilterServerInfo filterServerInfo = this.filterServerTable.get(channel);
         if (filterServerInfo != null) {
@@ -111,6 +136,9 @@ public class FilterServerManager {
         }
     }
 
+    /**
+     * 扫描不是存活的生产者客户端channel通道,将其从 filterServerTable 中剔除,并关闭该channel通道
+     */
     public void scanNotActiveChannel() {
 
         Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
@@ -144,8 +172,19 @@ public class FilterServerManager {
         return addr;
     }
 
+    /**
+     * broker上注册FilterServer的信息
+     *
+     */
     static class FilterServerInfo {
+    	/**
+    	 * filterServer服务器地址.
+    	 */
         private String filterServerAddr;
+        
+        /**
+         * filterServer上次发送心跳包时间.
+         */
         private long lastUpdateTimestamp;
 
         public String getFilterServerAddr() {

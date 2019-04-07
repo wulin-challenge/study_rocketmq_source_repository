@@ -33,8 +33,16 @@ import org.slf4j.LoggerFactory;
 public class ProducerManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
+    
+    /**
+     * 生产者客户端 channel通道过期时间,默认120s
+     */
     private static final long CHANNEL_EXPIRED_TIMEOUT = 1000 * 120;
     private final Lock groupChannelLock = new ReentrantLock();
+    
+    /**
+     * 生产组对应的channel列表
+     */
     private final HashMap<String /* group name */, HashMap<Channel, ClientChannelInfo>> groupChannelTable =
         new HashMap<String, HashMap<Channel, ClientChannelInfo>>();
 
@@ -58,6 +66,9 @@ public class ProducerManager {
         return newGroupChannelTable;
     }
 
+    /**
+     * 扫描不是存活的生产者客户端channel通道,将其从 groupChannelTable 中剔除,并关闭该channel通道
+     */
     public void scanNotActiveChannel() {
         try {
             if (this.groupChannelLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {

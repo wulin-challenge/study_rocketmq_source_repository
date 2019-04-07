@@ -50,7 +50,7 @@ public class Consumer {
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 
         //设置consumer所订阅的Topic和Tag，*代表全部的Tag
-        consumer.subscribe("TopicTest2", "TagA");
+        consumer.subscribe("TopicTest3", "TagA");
 
         //设置一个Listener，主要进行消息的逻辑处理
         consumer.registerMessageListener(new MessageListenerConcurrently() {
@@ -63,6 +63,7 @@ public class Consumer {
             		byte[] body = msg.getBody();
             		try {
 						String message = new String(body,RemotingHelper.DEFAULT_CHARSET);
+						 System.out.println(Thread.currentThread().getName() + " : " + message);
 						 System.out.println(Thread.currentThread().getName() + " : " + message);
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
