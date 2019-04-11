@@ -543,6 +543,7 @@ public class DefaultMessageStore implements MessageStore {
 
         GetMessageResult getResult = new GetMessageResult();
 
+        //代表当前主服务器消息存储文件最大偏移量 。
         //调用 CommitLog.getMaxOffset()方法获取 commitlog 文件目前写入的最大位置 maxOffsetPy；
         final long maxOffsetPy = this.commitLog.getMaxOffset();
 
@@ -611,6 +612,7 @@ public class DefaultMessageStore implements MessageStore {
                         status = GetMessageStatus.NO_MATCHED_MESSAGE;
 
                         long nextPhyFileStartOffset = Long.MIN_VALUE;
+                        //此次拉取消息最大偏移量 。
                         long maxPhyOffsetPulling = 0;
 
                         int i = 0;
@@ -708,10 +710,19 @@ public class DefaultMessageStore implements MessageStore {
                          * 检查未拉取的消息的大小是否大于最大可使用内存，若大于，则建议从备用 Broker 拉取消息，
                          * 即设置 GetMessageResult.suggestPullingFromSlave等于 true；未拉取的消息的大小计算方式是：
                          *  commitlog 的最大物理偏移 offset减去此次拉取的最后一个消息的物理偏移 offset 即为还未拉取的消息大小 
+                         * ---------------------------------------------------------------------------
+                         * diff:对于 PullMessageService 线程来说，当前未被拉取到消息消费端的消息长度 。
+                         *  
                          */
                         long diff = maxOffsetPy - maxPhyOffsetPulling;
+                        
+                        /*
+                         * 表示 RocketMQ消息常驻内存的大小，超过该大小， RocketMQ会将旧的消息置换回磁盘 。
+                         */
                         long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE
                             * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
+                        
+                        //如果diff大于memory,表示当前需要拉取的消息已经超出了常驻内存的大小,表示主服务器繁忙,此时才建议从从服务器拉取.
                         getResult.setSuggestPullingFromSlave(diff > memory);
                     } finally {
 

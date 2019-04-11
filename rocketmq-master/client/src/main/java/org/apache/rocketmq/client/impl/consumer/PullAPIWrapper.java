@@ -322,6 +322,12 @@ public class PullAPIWrapper {
             return this.defaultBrokerId;
         }
 
+        /**
+         * 缓存表中获取该消息消费队列的brokerid,如果找到,则返回,否则返回brokerName的主节点.那pullFromWhichNodeTable消息从何而来呢?
+         * 原来消息消费拉取线程PullMessageService根据PullRequest请求从主服务器拉取消息后会返回下一次建议拉取的brokerId,
+         * 消息消费者线程在收到消息后,会根据主服务器的建议拉取brokerId来更新pullFromWhichNodeTable,
+         * 消息消费者线程更新pullFromWhichNodeTable的方法: PullAPIWrapper#processPullResult
+         */
         // 若消息队列映射拉取Broker存在，则返回映射Broker编号
         AtomicLong suggest = this.pullFromWhichNodeTable.get(mq);
         if (suggest != null) {

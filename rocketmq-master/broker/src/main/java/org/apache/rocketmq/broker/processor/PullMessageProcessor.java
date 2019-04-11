@@ -260,8 +260,11 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             responseHeader.setMinOffset(getMessageResult.getMinOffset());
             responseHeader.setMaxOffset(getMessageResult.getMaxOffset());
 
-            // TODO 待读
             //计算建议读取brokerId
+            /*
+             * 如果主服务器繁忙则建议下一次从从服务器拉取消息,设置suggestWhichBrokerld为配置文件中whichBrokerWhenConsumeSlowly属性,
+             * 默认为1.如果一个Master拥有多台Slav巳服务器,参与消息拉取负载的从服务器只会是其中一个.
+             */
             if (getMessageResult.isSuggestPullingFromSlave()) {
                 responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getWhichBrokerWhenConsumeSlowly());
             } else {

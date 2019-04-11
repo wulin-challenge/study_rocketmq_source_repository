@@ -1155,7 +1155,7 @@ public class MQClientInstance {
      *
      * @param brokerName broker名字
      * @param brokerId broker编号
-     * @param onlyThisBroker 是否必须是该broker
+     * @param onlyThisBroker 是否必须返回brokerId的Broker对应的服务器信息
      * @return Broker信息
      */
     public FindBrokerResult findBrokerAddressInSubscribe(
@@ -1169,6 +1169,10 @@ public class MQClientInstance {
 
         // 获得Broker信息
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        /*
+         * 根据brokerId从Broker主从缓存表中获取指定Broker名称,如果根据brokerId未找到相关条目,此时若onlyThisBroker为false,
+         * 则随机返回Broker中任意一个Broker,否则返回null.
+         */
         if (map != null && !map.isEmpty()) {
             brokerAddr = map.get(brokerId);
             slave = brokerId != MixAll.MASTER_ID;
@@ -1183,6 +1187,9 @@ public class MQClientInstance {
             }
         }
 
+        /*
+         * 组装FindBrokerResult时,需要设置是否是slave这个属性.如果brokerld=O,表示返回的Broker是主节点,否则返回的是从节点
+         */
         // 找到broker，则返回信息
         if (found) {
             return new FindBrokerResult(brokerAddr, slave, findBrokerVersion(brokerName, brokerAddr));
