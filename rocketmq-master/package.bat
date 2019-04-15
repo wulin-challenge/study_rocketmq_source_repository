@@ -1,0 +1,1 @@
+mvn -Prelease-all -DskipTests clean install -U --settings C:\Users\ThinkPad\.m2\settings_jdk8_2.xml

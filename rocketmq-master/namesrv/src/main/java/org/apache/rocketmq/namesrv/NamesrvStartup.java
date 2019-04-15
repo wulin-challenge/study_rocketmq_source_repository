@@ -50,7 +50,9 @@ public class NamesrvStartup {
      */
     public static void main(String[] args) {
     	System.out.println("user.home : "+System.getProperty("user.home"));
+    	System.out.println("ROCKETMQ_HOME : "+System.getenv("ROCKETMQ_HOME"));
         main0(args);
+        System.out.println("nameServer启动成功!");
     }
 
     public static NamesrvController main0(String[] args) {
