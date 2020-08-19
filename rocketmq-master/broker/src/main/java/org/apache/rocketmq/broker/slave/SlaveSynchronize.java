@@ -45,6 +45,9 @@ public class SlaveSynchronize {
         this.masterAddr = masterAddr;
     }
 
+    /**
+     * 若该broker的节点角色类型为slave,则从主节点同步主题,消费者偏移量,延迟偏移量,订阅组的配置信息定时器
+     */
     public void syncAll() {
         this.syncTopicConfig();
         this.syncConsumerOffset();

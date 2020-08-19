@@ -21,7 +21,7 @@ public class ConsumerTemp1 {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("news_default_rocketmq_group");
 
         //同样也要设置NameServer地址
-        consumer.setNamesrvAddr("192.168.0.107:9876;192.168.0.108:9876");
+        consumer.setNamesrvAddr("192.168.0.107:9876");
 
         //这里设置的是一个consumer的消费策略
         //CONSUME_FROM_LAST_OFFSET 默认策略，从该队列最尾开始消费，即跳过历史消息

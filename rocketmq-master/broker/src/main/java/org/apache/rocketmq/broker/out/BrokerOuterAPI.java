@@ -70,6 +70,10 @@ public class BrokerOuterAPI {
         this.remotingClient.shutdown();
     }
 
+    /**
+     * 获取最新nemeServer地址的定期器
+     * @return
+     */
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();

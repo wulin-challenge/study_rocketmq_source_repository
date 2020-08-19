@@ -9,7 +9,7 @@ public class SyncProducerTemp1 {
     public static void main(String[] args) throws Exception {
         //Instantiate with a producer group name.
         DefaultMQProducer producer = new DefaultMQProducer("news_default_rocketmq_group");
-        producer.setNamesrvAddr("192.168.0.107:9876;192.168.0.108:9876");
+        producer.setNamesrvAddr("192.168.0.107:9876");
         //Launch the instance.
         producer.start();
         for (int i = 0; i < 10; i++) {

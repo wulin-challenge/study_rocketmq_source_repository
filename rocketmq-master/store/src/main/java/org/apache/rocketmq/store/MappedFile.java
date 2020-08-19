@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 import sun.nio.ch.DirectBuffer;
 
 /**
- * 文件存储的核心映射文件
+ * 文件存储的核心映射文件,即内存映射文件
  *
  */
 public class MappedFile extends ReferenceResource {
@@ -58,7 +58,7 @@ public class MappedFile extends ReferenceResource {
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
     /**
-     * JVM中mmap的数量,即 当前 JVM实例中 MappedFile对象个数
+     * JVM中mmap(memory mapping 内存映射)的数量,即 当前 JVM实例中 MappedFile对象个数
      */
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
     /**

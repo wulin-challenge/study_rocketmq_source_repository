@@ -275,6 +275,7 @@ public class BrokerController {
                 @Override
                 public void run() {
                     try {
+                    	// 打印broker状态信息的定时器
                         BrokerController.this.getBrokerStats().record();
                     } catch (Throwable e) {
                         log.error("schedule record error.", e);
@@ -286,6 +287,7 @@ public class BrokerController {
                 @Override
                 public void run() {
                     try {
+                    	//将内存中的配置信息持久化到磁盘的定时器
                         BrokerController.this.consumerOffsetManager.persist();
                     } catch (Throwable e) {
                         log.error("schedule persist consumerOffset error.", e);
@@ -368,6 +370,7 @@ public class BrokerController {
                     @Override
                     public void run() {
                         try {
+                        	//若该broker的节点角色类型为slave,则从主节点同步主题,消费者偏移量,延迟偏移量,订阅组的配置信息定时器
                             BrokerController.this.slaveSynchronize.syncAll();
                         } catch (Throwable e) {
                             log.error("ScheduledTask syncAll slave exception", e);

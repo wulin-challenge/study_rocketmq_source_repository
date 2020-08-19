@@ -1415,6 +1415,7 @@ public class CommitLog {
 
         private final StringBuilder msgIdBuilder = new StringBuilder();
 
+        // 实现对ip:port地址存储的公共帮助buffer
         private final ByteBuffer hostHolder = ByteBuffer.allocate(8);
 
         DefaultAppendMessageCallback(final int size) {
@@ -1427,6 +1428,14 @@ public class CommitLog {
             return msgStoreItemMemory;
         }
 
+        /**
+         * 做具体的消息添加
+         * <p> 这个方法是线程安全的,因为在前面的代码中已经上了锁,在 CommitLog.putMessage(MessageExtBrokerInner msg)方法中的 putMessageLock.lock();进行了上锁
+         * @param fileFromOffset mappedfile文件的起始偏移量
+         * @param byteBuffer 使用slice()方法切片的buffer,拥有独立的指针
+         * @param maxBlank mappedfile的剩余大小
+         * @param msgInner broker的内部消息对象
+         */
         public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
             final MessageExtBrokerInner msgInner) {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
@@ -1434,10 +1443,12 @@ public class CommitLog {
             // PHY OFFSET - 物理偏移量
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
+            // 重置ip:port地址存储的公共帮助buffer,指定器容量为8
             this.resetByteBuffer(hostHolder, 8);
             String msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(hostHolder), wroteOffset);
 
             // Record ConsumeQueue information - 记录ConsumeQueue信息
+         // 虽然keyBuilder是成员变量,但这个操作是安全的,因为在前面的代码中已经上了锁,在 CommitLog.putMessage(MessageExtBrokerInner msg)方法中的 putMessageLock.lock();进行了上锁
             keyBuilder.setLength(0);
             keyBuilder.append(msgInner.getTopic());
             keyBuilder.append('-');
@@ -1585,6 +1596,7 @@ public class CommitLog {
             //physical offset - 物理偏移量
             long wroteOffset = fileFromOffset + byteBuffer.position();
             // Record ConsumeQueue information - 记录ConsumeQueue信息
+            // 虽然keyBuilder是成员变量,但这个操作是安全的,因为在前面的代码中已经上了锁,在 CommitLog.putMessage(MessageExtBrokerInner msg)方法中的 putMessageLock.lock();进行了上锁
             keyBuilder.setLength(0);
             keyBuilder.append(messageExtBatch.getTopic());
             keyBuilder.append('-');
